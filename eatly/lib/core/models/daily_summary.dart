@@ -57,4 +57,3 @@ class DailySummary {
   double get carbsProgress => totalCarbs / targetCarbs;
   double get fatProgress => totalFat / targetFat;
 }
-

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
-import '../../../theme/app_theme.dart';
-import '../../../models/food_item.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/models/food_item.dart';
 import 'home_viewmodel.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 
@@ -67,10 +67,7 @@ class HomeView extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             model.formattedDate,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.white70,
-            ),
+            style: const TextStyle(fontSize: 16, color: Colors.white70),
           ),
         ],
       ),
@@ -88,8 +85,14 @@ class HomeView extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Günlük Özet', style: Theme.of(context).textTheme.headlineSmall),
-                IconButton(icon: const Icon(Icons.info_outline), onPressed: () {}),
+                Text(
+                  'Günlük Özet',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.info_outline),
+                  onPressed: () {},
+                ),
               ],
             ),
             const SizedBox(height: 20),
@@ -101,14 +104,21 @@ class HomeView extends StatelessWidget {
                 center: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('${s.totalCalories.toInt()}',
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textPrimary,
-                        )),
-                    Text('/ ${s.targetCalories.toInt()} kcal',
-                        style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary)),
+                    Text(
+                      '${s.totalCalories.toInt()}',
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      '/ ${s.targetCalories.toInt()} kcal',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
                   ],
                 ),
                 progressColor: AppTheme.primaryColor,
@@ -120,8 +130,18 @@ class HomeView extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildMacroInfo('Protein', s.totalProtein, s.targetProtein, Colors.blue),
-                _buildMacroInfo('Karbonhidrat', s.totalCarbs, s.targetCarbs, Colors.orange),
+                _buildMacroInfo(
+                  'Protein',
+                  s.totalProtein,
+                  s.targetProtein,
+                  Colors.blue,
+                ),
+                _buildMacroInfo(
+                  'Karbonhidrat',
+                  s.totalCarbs,
+                  s.targetCarbs,
+                  Colors.orange,
+                ),
                 _buildMacroInfo('Yağ', s.totalFat, s.targetFat, Colors.purple),
               ],
             ),
@@ -131,14 +151,31 @@ class HomeView extends StatelessWidget {
     );
   }
 
-  Widget _buildMacroInfo(String label, double current, double target, Color color) {
+  Widget _buildMacroInfo(
+    String label,
+    double current,
+    double target,
+    Color color,
+  ) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+        ),
         const SizedBox(height: 4),
-        Text('${current.toInt()}g',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
-        const Text('/ hedef', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+        Text(
+          '${current.toInt()}g',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        const Text(
+          '/ hedef',
+          style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+        ),
       ],
     );
   }
@@ -151,7 +188,10 @@ class HomeView extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Son Öğünler', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+            const Text(
+              'Son Öğünler',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            ),
             TextButton(onPressed: () {}, child: const Text('Tümünü Gör')),
           ],
         ),
@@ -163,10 +203,16 @@ class HomeView extends StatelessWidget {
               child: Center(
                 child: Column(
                   children: [
-                    Icon(Icons.restaurant_menu, size: 64, color: Colors.grey.shade300),
+                    Icon(
+                      Icons.restaurant_menu,
+                      size: 64,
+                      color: Colors.grey.shade300,
+                    ),
                     const SizedBox(height: 16),
-                    const Text('Henüz öğün eklemediniz',
-                        style: TextStyle(color: AppTheme.textSecondary)),
+                    const Text(
+                      'Henüz öğün eklemediniz',
+                      style: TextStyle(color: AppTheme.textSecondary),
+                    ),
                   ],
                 ),
               ),
@@ -199,11 +245,14 @@ class HomeView extends StatelessWidget {
           ),
           child: const Icon(Icons.fastfood, color: AppTheme.primaryColor),
         ),
-        title: Text(food.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text('${food.portion.toInt()}g • ${food.nutritionInfo.calories.toInt()} kcal'),
+        title: Text(
+          food.name,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          '${food.portion.toInt()}g • ${food.nutritionInfo.calories.toInt()} kcal',
+        ),
       ),
     );
   }
 }
-
-

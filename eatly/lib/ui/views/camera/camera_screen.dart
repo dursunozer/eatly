@@ -7,8 +7,8 @@ import 'dart:convert';
 //import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
 
-import '../../../theme/app_theme.dart';
-import '../../../models/vision_result.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/models/vision_result.dart';
 
 const String VISION_API_KEY = "AIzaSyBPwumSTFWb_DMlXFH0PqC-SyHogdic71E";
 

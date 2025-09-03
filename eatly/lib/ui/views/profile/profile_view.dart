@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
-import '../../../theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import 'profile_viewmodel.dart';
 
 class ProfileView extends StatelessWidget {
@@ -15,11 +15,7 @@ class ProfileView extends StatelessWidget {
           backgroundColor: AppTheme.backgroundColor,
           appBar: AppBar(title: const Text('Profilim')),
           body: SingleChildScrollView(
-            child: Column(
-              children: [
-                _header(model, context),
-              ],
-            ),
+            child: Column(children: [_header(model, context)]),
           ),
         );
       },
@@ -32,7 +28,11 @@ class ProfileView extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -42,26 +42,37 @@ class ProfileView extends StatelessWidget {
             height: 100,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: const LinearGradient(colors: [AppTheme.primaryColor, AppTheme.secondaryColor]),
+              gradient: const LinearGradient(
+                colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+              ),
               boxShadow: [
-                BoxShadow(color: AppTheme.primaryColor.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 5)),
+                BoxShadow(
+                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 5),
+                ),
               ],
             ),
             child: Center(
               child: Text(
                 model.name.substring(0, 1).toUpperCase(),
-                style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.white),
+                style: const TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
           const SizedBox(height: 16),
           Text(model.name, style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 8),
-          Text('${model.age} yaşında • ${model.gender}', style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
+          Text(
+            '${model.age} yaşında • ${model.gender}',
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+          ),
         ],
       ),
     );
   }
 }
-
-

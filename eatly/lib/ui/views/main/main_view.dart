@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
-import '../../../theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import '../home/home_view.dart';
 import '../nutrition/nutrition_view.dart';
 import '../profile/profile_view.dart';
@@ -63,11 +63,10 @@ class MainView extends StatelessWidget {
             backgroundColor: AppTheme.primaryColor,
             child: const Icon(Icons.camera_alt, color: Colors.white),
           ),
-          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerDocked,
         );
       },
     );
   }
 }
-
-

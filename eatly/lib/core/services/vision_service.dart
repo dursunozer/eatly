@@ -46,42 +46,49 @@ class VisionService {
       throw Exception('Vision proxy endpoint tanımlı değil (EnvConfig).');
     }
 
-    final uri = Uri.parse('${EnvConfig.visionProxyEndpoint}?features=labels,objects');
+    final uri = Uri.parse(
+      '${EnvConfig.visionProxyEndpoint}?features=labels,objects',
+    );
     final response = await _client.post(
       uri,
-      headers: {
-        'Content-Type': 'application/octet-stream',
-      },
+      headers: {'Content-Type': 'application/octet-stream'},
       body: imageBytes,
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Vision proxy hata: ${response.statusCode} ${response.body}');
+      throw Exception(
+        'Vision proxy hata: ${response.statusCode} ${response.body}',
+      );
     }
 
-    final Map<String, dynamic> json = jsonDecode(response.body) as Map<String, dynamic>;
+    final Map<String, dynamic> json =
+        jsonDecode(response.body) as Map<String, dynamic>;
     final List<VisionLabel> labels = ((json['labels'] as List?) ?? [])
-        .map((e) => VisionLabel(
-              description: e['description'] as String,
-              score: (e['score'] as num).toDouble(),
-            ))
+        .map(
+          (e) => VisionLabel(
+            description: e['description'] as String,
+            score: (e['score'] as num).toDouble(),
+          ),
+        )
         .toList();
 
     final List<VisionObject> objects = ((json['objects'] as List?) ?? [])
-        .map((e) => VisionObject(
-              name: e['name'] as String,
-              score: (e['score'] as num).toDouble(),
-              polygon: ((e['polygon'] as List?) ?? [])
-                  .map((v) => NormalizedVertex(
-                        x: (v['x'] as num).toDouble(),
-                        y: (v['y'] as num).toDouble(),
-                      ))
-                  .toList(),
-            ))
+        .map(
+          (e) => VisionObject(
+            name: e['name'] as String,
+            score: (e['score'] as num).toDouble(),
+            polygon: ((e['polygon'] as List?) ?? [])
+                .map(
+                  (v) => NormalizedVertex(
+                    x: (v['x'] as num).toDouble(),
+                    y: (v['y'] as num).toDouble(),
+                  ),
+                )
+                .toList(),
+          ),
+        )
         .toList();
 
     return VisionResult(labels: labels, objects: objects);
   }
 }
-
-

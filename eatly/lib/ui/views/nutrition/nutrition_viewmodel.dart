@@ -1,6 +1,6 @@
 import 'package:stacked/stacked.dart';
-import '../../../models/daily_summary.dart';
-import '../../../models/food_item.dart';
+import '../../../core/models/daily_summary.dart';
+import '../../../core/models/food_item.dart';
 
 class NutritionViewModel extends BaseViewModel {
   final DailySummary dailySummary = DailySummary(
@@ -25,5 +25,3 @@ class NutritionViewModel extends BaseViewModel {
     ],
   );
 }
-
-

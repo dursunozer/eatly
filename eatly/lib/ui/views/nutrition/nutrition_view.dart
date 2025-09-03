@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
-import '../../../theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import 'nutrition_viewmodel.dart';
 
 class NutritionView extends StatelessWidget {
