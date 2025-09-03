@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "311120020396",
+    "project_id": "eatly-0",
+    "storage_bucket": "eatly-0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:311120020396:android:5ea3fbcd9ab2160b733009",
+        "android_client_info": {
+          "package_name": "com.example.eatly"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAXqk26pJJtFrrP88DUDeKr6Oum8Qv7R_4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

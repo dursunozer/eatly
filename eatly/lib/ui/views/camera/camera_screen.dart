@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
-import '../theme/app_theme.dart';
-import 'dart:io';
+import 'dart:typed_data';
+
+import 'dart:convert';
+//import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+
+import '../../../theme/app_theme.dart';
+import '../../../models/vision_result.dart';
+
+const String VISION_API_KEY = "AIzaSyBPwumSTFWb_DMlXFH0PqC-SyHogdic71E";
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -24,12 +32,14 @@ class _CameraScreenState extends State<CameraScreen> {
     _initializeCamera();
   }
 
+  final dio = Dio();
+
   Future<void> _initializeCamera() async {
     try {
       _cameras = await availableCameras();
       if (_cameras != null && _cameras!.isNotEmpty) {
         _controller = CameraController(
-          _cameras![0],
+          _cameras![0], // Varsayılan olarak ilk kamerayı kullan
           ResolutionPreset.high,
           enableAudio: false,
         );
@@ -42,6 +52,9 @@ class _CameraScreenState extends State<CameraScreen> {
       }
     } catch (e) {
       print('Kamera başlatma hatası: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Kamera başlatma hatası: $e')));
     }
   }
 
@@ -59,13 +72,12 @@ class _CameraScreenState extends State<CameraScreen> {
     });
 
     try {
-      final image = await _controller!.takePicture();
-      // Fotoğraf çekildikten sonra analiz ekranına yönlendir
-      _navigateToAnalysis(File(image.path));
+      final XFile image = await _controller!.takePicture();
+      _navigateToAnalysis(image); // XFile gönderiliyor
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Fotoğraf çekilemedi: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Fotoğraf çekilemedi: $e')));
     } finally {
       setState(() {
         _isProcessing = false;
@@ -75,19 +87,21 @@ class _CameraScreenState extends State<CameraScreen> {
 
   Future<void> _pickFromGallery() async {
     try {
-      final image = await _imagePicker.pickImage(source: ImageSource.gallery);
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+      );
       if (image != null) {
-        _navigateToAnalysis(File(image.path));
+        _navigateToAnalysis(image); // XFile gönderiliyor
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Resim seçilemedi: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Resim seçilemedi: $e')));
     }
   }
 
-  void _navigateToAnalysis(File imageFile) {
-    // Analiz ekranına yönlendir
+  Future<void> _navigateToAnalysis(XFile imageXFile) async {
+    // Parametre artık XFile
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -95,33 +109,123 @@ class _CameraScreenState extends State<CameraScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircularProgressIndicator(
-              color: AppTheme.primaryColor,
-            ),
+            const CircularProgressIndicator(color: AppTheme.primaryColor),
             const SizedBox(height: 16),
             const Text('Fotoğraf analiz ediliyor...'),
             const SizedBox(height: 8),
             Text(
               'Besinler tespit ediliyor',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             ),
           ],
         ),
       ),
     );
 
-    // Simülasyon için 2 saniye bekle
-    Future.delayed(const Duration(seconds: 2), () {
-      Navigator.pop(context); // Dialog'u kapat
-      // Analiz sonuçları ekranına git
-      _showAnalysisResults(imageFile);
-    });
+    try {
+      final Uint8List bytes = await imageXFile
+          .readAsBytes(); // XFile'ın kendi readAsBytes() metodu kullanılıyor
+      final String base64Image = base64Encode(
+        bytes,
+      ); // Görüntüyü Base64'e çevir
+
+      final String url = Uri.https(
+        'vision.googleapis.com',
+        '/v1/images:annotate',
+        {'key': VISION_API_KEY},
+      ).toString();
+
+      final Map<String, dynamic> requestBody = {
+        'requests': [
+          {
+            'image': {'content': base64Image},
+            'features': [
+              {'type': 'LABEL_DETECTION', 'maxResults': 10},
+              {'type': 'OBJECT_LOCALIZATION'},
+            ],
+          },
+        ],
+      };
+
+      final Response<Map<String, dynamic>> response = await dio.post(
+        url,
+        data: requestBody,
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic>? responseData =
+            response.data; // <<< response.data doğrudan kullanılıyor
+
+        final Map<String, dynamic>? firstResponse =
+            responseData?['responses'] != null &&
+                responseData!['responses'].isNotEmpty
+            ? responseData['responses'][0] as Map<String, dynamic>
+            : null;
+
+        if (firstResponse != null) {
+          final VisionResult visionResult = VisionResult.fromJson(
+            firstResponse,
+          );
+          _showAnalysisResults(bytes, visionResult);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Vision AI API\'den geçerli yanıt alınamadı.'),
+            ),
+          );
+        }
+      } else {
+        // Dio'da response.statusMessage daha açıklayıcı olabilir
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Vision AI API Hatası: ${response.statusCode} - ${response.statusMessage}',
+            ),
+          ), // <<< statusMessage kullanıldı
+        );
+        print(
+          'Vision AI API Hatası: ${response.statusCode} - ${response.statusMessage}',
+        ); // <<< statusMessage kullanıldı
+      }
+    } on DioException catch (e) {
+      // <<< Sadece Dio hatalarını yakala
+      if (!mounted) return;
+      Navigator.pop(context);
+      String errorMessage = 'Ağ Hatası: ';
+      if (e.response != null) {
+        // API'den bir yanıt (hata kodu ile) geldiyse
+        errorMessage +=
+            '${e.response?.statusCode} - ${e.response?.statusMessage}';
+        if (e.response?.data != null) {
+          // Yanıtın içinde hata verisi varsa
+          errorMessage += '\nDetay: ${e.response?.data}';
+        }
+      } else {
+        // Yanıt gelmediyse (ağ bağlantısı yok, timeout vb.)
+        errorMessage += e.message ?? 'Bilinmeyen bir Dio hatası.';
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Analiz hatası: $errorMessage')));
+      print('Analiz hatası (Dio): $errorMessage');
+    } catch (e) {
+      // <<< Diğer genel hataları yakala
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Genel analiz hatası: $e')));
+      print('Genel analiz hatası: $e');
+    }
   }
 
-  void _showAnalysisResults(File imageFile) {
+  // _showAnalysisResults metodu güncellendi
+  void _showAnalysisResults(Uint8List imageBytes, VisionResult result) {
+    // Parametre File yerine Uint8List
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -159,16 +263,39 @@ class _CameraScreenState extends State<CameraScreen> {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.file(
-                      imageFile,
+                    child: Image.memory(
+                      // Image.file yerine Image.memory kullanılıyor
+                      imageBytes,
                       height: 200,
                       width: double.infinity,
                       fit: BoxFit.cover,
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _buildDetectedFoodItem('Portakal', '1 adet (150g)', 62),
-                  _buildDetectedFoodItem('Elma', '1 adet (180g)', 95),
+                  // Obje tespitleri varsa onları göster
+                  if (result.objects.isNotEmpty)
+                    ...result.objects.map(
+                      (o) => _buildDetectedVisionItem(
+                        o.name,
+                        'Skor: ${(o.score * 100).toStringAsFixed(0)}%',
+                      ),
+                    )
+                  // Obje tespiti yoksa etiket tespitlerini göster
+                  else if (result.labels.isNotEmpty)
+                    ...result.labels
+                        .take(5)
+                        .map(
+                          (l) => _buildDetectedVisionItem(
+                            l.description,
+                            'Skor: ${(l.score * 100).toStringAsFixed(0)}%',
+                          ),
+                        ),
+                  if (result.objects.isEmpty && result.labels.isEmpty)
+                    const Text(
+                      'Herhangi bir besin veya obje tespit edilemedi.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () {
@@ -192,7 +319,7 @@ class _CameraScreenState extends State<CameraScreen> {
     );
   }
 
-  Widget _buildDetectedFoodItem(String name, String portion, int calories) {
+  Widget _buildDetectedVisionItem(String title, String subtitle) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -206,10 +333,7 @@ class _CameraScreenState extends State<CameraScreen> {
                 color: AppTheme.primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
-                Icons.restaurant,
-                color: AppTheme.primaryColor,
-              ),
+              child: const Icon(Icons.restaurant, color: AppTheme.primaryColor),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -217,14 +341,14 @@ class _CameraScreenState extends State<CameraScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    name,
+                    title,
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
-                    portion,
+                    subtitle,
                     style: const TextStyle(
                       fontSize: 14,
                       color: AppTheme.textSecondary,
@@ -232,26 +356,6 @@ class _CameraScreenState extends State<CameraScreen> {
                   ),
                 ],
               ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '$calories',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor,
-                  ),
-                ),
-                const Text(
-                  'kcal',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-              ],
             ),
           ],
         ),
@@ -261,6 +365,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // build metodu aynı kalacak
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -280,15 +385,9 @@ class _CameraScreenState extends State<CameraScreen> {
       body: Stack(
         children: [
           if (_isInitialized && _controller != null)
-            Center(
-              child: CameraPreview(_controller!),
-            )
+            Center(child: CameraPreview(_controller!))
           else
-            const Center(
-              child: CircularProgressIndicator(
-                color: Colors.white,
-              ),
-            ),
+            const Center(child: CircularProgressIndicator(color: Colors.white)),
           Positioned(
             bottom: 0,
             left: 0,
@@ -299,10 +398,7 @@ class _CameraScreenState extends State<CameraScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.8),
-                    Colors.transparent,
-                  ],
+                  colors: [Colors.black.withOpacity(0.8), Colors.transparent],
                 ),
               ),
               child: Row(
@@ -310,11 +406,13 @@ class _CameraScreenState extends State<CameraScreen> {
                 children: [
                   IconButton(
                     icon: const Icon(
-                      Icons.flash_auto,
+                      Icons.flash_auto, // Flaş kontrolü
                       color: Colors.white,
                       size: 30,
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      // Flaş kontrolü buraya eklenebilir
+                    },
                   ),
                   GestureDetector(
                     onTap: _isProcessing ? null : _takePicture,
@@ -345,14 +443,17 @@ class _CameraScreenState extends State<CameraScreen> {
                   IconButton(
                     icon: Icon(
                       _cameras != null && _cameras!.length > 1
-                          ? Icons.flip_camera_ios
-                          : Icons.flip_camera_ios_outlined,
+                          ? Icons
+                                .flip_camera_ios // Birden fazla kamera varsa çevirme ikonu
+                          : Icons
+                                .flip_camera_ios_outlined, // Tek kamera veya yoksa outline ikon
                       color: Colors.white,
                       size: 30,
                     ),
                     onPressed: _cameras != null && _cameras!.length > 1
                         ? () {
-                            // Kamera değiştir
+                            // Kamera değiştirme mantığı buraya eklenebilir
+                            // Örneğin: _toggleCamera();
                           }
                         : null,
                   ),

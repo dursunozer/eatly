@@ -636,3 +636,4 @@ class _NutritionDetailsScreenState extends State<NutritionDetailsScreen>
     );
   }
 }
+
