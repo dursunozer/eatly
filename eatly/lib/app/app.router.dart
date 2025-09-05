@@ -1,3 +1,4 @@
+// dart format width=80
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 // **************************************************************************
@@ -29,7 +30,6 @@ class Routes {
 class StackedRouter extends _i1.RouterBase {
   final _routes = <_i1.RouteDef>[
     _i1.RouteDef(Routes.loginView, page: _i2.LoginView),
-
     _i1.RouteDef(Routes.mainView, page: _i3.MainView),
     _i1.RouteDef(Routes.cameraScreen, page: _i4.CameraScreen),
     _i1.RouteDef(Routes.nutritionView, page: _i5.NutritionView),
@@ -37,26 +37,38 @@ class StackedRouter extends _i1.RouterBase {
 
   final _pagesMap = <Type, _i1.StackedRouteFactory>{
     _i2.LoginView: (data) {
+      final args = data.getArgs<LoginViewArguments>(
+        orElse: () => const LoginViewArguments(),
+      );
       return _i6.MaterialPageRoute<dynamic>(
-        builder: (context) => const _i2.LoginView(),
+        builder: (context) => _i2.LoginView(key: args.key),
         settings: data,
       );
     },
     _i3.MainView: (data) {
+      final args = data.getArgs<MainViewArguments>(
+        orElse: () => const MainViewArguments(),
+      );
       return _i6.MaterialPageRoute<dynamic>(
-        builder: (context) => const _i3.MainView(),
+        builder: (context) => _i3.MainView(key: args.key),
         settings: data,
       );
     },
     _i4.CameraScreen: (data) {
+      final args = data.getArgs<CameraScreenArguments>(
+        orElse: () => const CameraScreenArguments(),
+      );
       return _i6.MaterialPageRoute<dynamic>(
-        builder: (context) => const _i4.CameraScreen(),
+        builder: (context) => _i4.CameraScreen(key: args.key),
         settings: data,
       );
     },
     _i5.NutritionView: (data) {
+      final args = data.getArgs<NutritionViewArguments>(
+        orElse: () => const NutritionViewArguments(),
+      );
       return _i6.MaterialPageRoute<dynamic>(
-        builder: (context) => const _i5.NutritionView(),
+        builder: (context) => _i5.NutritionView(key: args.key),
         settings: data,
       );
     },
@@ -69,16 +81,106 @@ class StackedRouter extends _i1.RouterBase {
   Map<Type, _i1.StackedRouteFactory> get pagesMap => _pagesMap;
 }
 
+class LoginViewArguments {
+  const LoginViewArguments({this.key});
+
+  final _i6.Key? key;
+
+  @override
+  String toString() {
+    return '{"key": "$key"}';
+  }
+
+  @override
+  bool operator ==(covariant LoginViewArguments other) {
+    if (identical(this, other)) return true;
+    return other.key == key;
+  }
+
+  @override
+  int get hashCode {
+    return key.hashCode;
+  }
+}
+
+class MainViewArguments {
+  const MainViewArguments({this.key});
+
+  final _i6.Key? key;
+
+  @override
+  String toString() {
+    return '{"key": "$key"}';
+  }
+
+  @override
+  bool operator ==(covariant MainViewArguments other) {
+    if (identical(this, other)) return true;
+    return other.key == key;
+  }
+
+  @override
+  int get hashCode {
+    return key.hashCode;
+  }
+}
+
+class CameraScreenArguments {
+  const CameraScreenArguments({this.key});
+
+  final _i6.Key? key;
+
+  @override
+  String toString() {
+    return '{"key": "$key"}';
+  }
+
+  @override
+  bool operator ==(covariant CameraScreenArguments other) {
+    if (identical(this, other)) return true;
+    return other.key == key;
+  }
+
+  @override
+  int get hashCode {
+    return key.hashCode;
+  }
+}
+
+class NutritionViewArguments {
+  const NutritionViewArguments({this.key});
+
+  final _i6.Key? key;
+
+  @override
+  String toString() {
+    return '{"key": "$key"}';
+  }
+
+  @override
+  bool operator ==(covariant NutritionViewArguments other) {
+    if (identical(this, other)) return true;
+    return other.key == key;
+  }
+
+  @override
+  int get hashCode {
+    return key.hashCode;
+  }
+}
+
 extension NavigatorStateExtension on _i7.NavigationService {
-  Future<dynamic> navigateToLoginView([
+  Future<dynamic> navigateToLoginView({
+    _i6.Key? key,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
     Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
     transition,
-  ]) async {
+  }) async {
     return navigateTo<dynamic>(
       Routes.loginView,
+      arguments: LoginViewArguments(key: key),
       id: routerId,
       preventDuplicates: preventDuplicates,
       parameters: parameters,
@@ -86,15 +188,17 @@ extension NavigatorStateExtension on _i7.NavigationService {
     );
   }
 
-  Future<dynamic> navigateToMainView([
+  Future<dynamic> navigateToMainView({
+    _i6.Key? key,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
     Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
     transition,
-  ]) async {
+  }) async {
     return navigateTo<dynamic>(
       Routes.mainView,
+      arguments: MainViewArguments(key: key),
       id: routerId,
       preventDuplicates: preventDuplicates,
       parameters: parameters,
@@ -102,15 +206,17 @@ extension NavigatorStateExtension on _i7.NavigationService {
     );
   }
 
-  Future<dynamic> navigateToCameraScreen([
+  Future<dynamic> navigateToCameraScreen({
+    _i6.Key? key,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
     Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
     transition,
-  ]) async {
+  }) async {
     return navigateTo<dynamic>(
       Routes.cameraScreen,
+      arguments: CameraScreenArguments(key: key),
       id: routerId,
       preventDuplicates: preventDuplicates,
       parameters: parameters,
@@ -118,15 +224,17 @@ extension NavigatorStateExtension on _i7.NavigationService {
     );
   }
 
-  Future<dynamic> navigateToNutritionView([
+  Future<dynamic> navigateToNutritionView({
+    _i6.Key? key,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
     Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
     transition,
-  ]) async {
+  }) async {
     return navigateTo<dynamic>(
       Routes.nutritionView,
+      arguments: NutritionViewArguments(key: key),
       id: routerId,
       preventDuplicates: preventDuplicates,
       parameters: parameters,
@@ -134,15 +242,17 @@ extension NavigatorStateExtension on _i7.NavigationService {
     );
   }
 
-  Future<dynamic> replaceWithLoginView([
+  Future<dynamic> replaceWithLoginView({
+    _i6.Key? key,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
     Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
     transition,
-  ]) async {
+  }) async {
     return replaceWith<dynamic>(
       Routes.loginView,
+      arguments: LoginViewArguments(key: key),
       id: routerId,
       preventDuplicates: preventDuplicates,
       parameters: parameters,
@@ -150,15 +260,17 @@ extension NavigatorStateExtension on _i7.NavigationService {
     );
   }
 
-  Future<dynamic> replaceWithMainView([
+  Future<dynamic> replaceWithMainView({
+    _i6.Key? key,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
     Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
     transition,
-  ]) async {
+  }) async {
     return replaceWith<dynamic>(
       Routes.mainView,
+      arguments: MainViewArguments(key: key),
       id: routerId,
       preventDuplicates: preventDuplicates,
       parameters: parameters,
@@ -166,15 +278,17 @@ extension NavigatorStateExtension on _i7.NavigationService {
     );
   }
 
-  Future<dynamic> replaceWithCameraScreen([
+  Future<dynamic> replaceWithCameraScreen({
+    _i6.Key? key,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
     Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
     transition,
-  ]) async {
+  }) async {
     return replaceWith<dynamic>(
       Routes.cameraScreen,
+      arguments: CameraScreenArguments(key: key),
       id: routerId,
       preventDuplicates: preventDuplicates,
       parameters: parameters,
@@ -182,15 +296,17 @@ extension NavigatorStateExtension on _i7.NavigationService {
     );
   }
 
-  Future<dynamic> replaceWithNutritionView([
+  Future<dynamic> replaceWithNutritionView({
+    _i6.Key? key,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
     Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
     transition,
-  ]) async {
+  }) async {
     return replaceWith<dynamic>(
       Routes.nutritionView,
+      arguments: NutritionViewArguments(key: key),
       id: routerId,
       preventDuplicates: preventDuplicates,
       parameters: parameters,

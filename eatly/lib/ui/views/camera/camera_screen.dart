@@ -4,11 +4,13 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
 
 import 'dart:convert';
-//import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../../../core/models/vision_result.dart';
+import '../../../core/models/vision_models.dart' as vr;
+import '../../../core/models/vision_api/vision_request.dart';
+import '../../../core/models/vision_api/vision_response.dart';
+import '../../../api/vision_api_client.dart';
 
 const String VISION_API_KEY = "AIzaSyBPwumSTFWb_DMlXFH0PqC-SyHogdic71E";
 
@@ -135,61 +137,39 @@ class _CameraScreenState extends State<CameraScreen> {
         {'key': VISION_API_KEY},
       ).toString();
 
-      final Map<String, dynamic> requestBody = {
-        'requests': [
-          {
-            'image': {'content': base64Image},
-            'features': [
-              {'type': 'LABEL_DETECTION', 'maxResults': 10},
-              {'type': 'OBJECT_LOCALIZATION'},
-            ],
-          },
-        ],
-      };
+      // Retrofit istemcisiyle çağrı
+      final client = VisionApiClient(dio, baseUrl: VISION_BASE_URL);
+      final request = VisionApiRequest(requests: [
+        RequestItem(
+          image: ImageContent(content: base64Image),
+          features: [
+            Feature(type: 'LABEL_DETECTION', maxResults: 10),
+            Feature(type: 'OBJECT_LOCALIZATION'),
+          ],
+        )
+      ]);
 
-      final Response<Map<String, dynamic>> response = await dio.post(
-        url,
-        data: requestBody,
-        options: Options(headers: {'Content-Type': 'application/json'}),
+      final VisionApiResponse apiRes = await client.annotateImage(
+        request,
+        VISION_API_KEY,
       );
 
       if (!mounted) return;
       Navigator.pop(context);
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic>? responseData =
-            response.data; // <<< response.data doğrudan kullanılıyor
-
-        final Map<String, dynamic>? firstResponse =
-            responseData?['responses'] != null &&
-                responseData!['responses'].isNotEmpty
-            ? responseData['responses'][0] as Map<String, dynamic>
-            : null;
-
-        if (firstResponse != null) {
-          final VisionResult visionResult = VisionResult.fromJson(
-            firstResponse,
-          );
-          _showAnalysisResults(bytes, visionResult);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Vision AI API\'den geçerli yanıt alınamadı.'),
-            ),
-          );
-        }
-      } else {
-        // Dio'da response.statusMessage daha açıklayıcı olabilir
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Vision AI API Hatası: ${response.statusCode} - ${response.statusMessage}',
-            ),
-          ), // <<< statusMessage kullanıldı
+      if (apiRes.responses.isNotEmpty) {
+        final first = apiRes.responses.first;
+        final vr.VisionResult visionResult = vr.VisionResult(
+          labels: first.labels ?? <vr.VisionLabel>[],
+          objects: first.objects ?? <vr.VisionObject>[],
         );
-        print(
-          'Vision AI API Hatası: ${response.statusCode} - ${response.statusMessage}',
-        ); // <<< statusMessage kullanıldı
+        _showAnalysisResults(bytes, visionResult);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Vision AI API\'den geçerli yanıt alınamadı.'),
+          ),
+        );
       }
     } on DioException catch (e) {
       // <<< Sadece Dio hatalarını yakala
@@ -224,7 +204,7 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   // _showAnalysisResults metodu güncellendi
-  void _showAnalysisResults(Uint8List imageBytes, VisionResult result) {
+  void _showAnalysisResults(Uint8List imageBytes, vr.VisionResult result) {
     // Parametre File yerine Uint8List
     showModalBottomSheet(
       context: context,
@@ -276,8 +256,8 @@ class _CameraScreenState extends State<CameraScreen> {
                   if (result.objects.isNotEmpty)
                     ...result.objects.map(
                       (o) => _buildDetectedVisionItem(
-                        o.name,
-                        'Skor: ${(o.score * 100).toStringAsFixed(0)}%',
+                        o.name.toString(),
+                        'Skor: ${((o.score) * 100).toStringAsFixed(0)}%',
                       ),
                     )
                   // Obje tespiti yoksa etiket tespitlerini göster
@@ -286,8 +266,8 @@ class _CameraScreenState extends State<CameraScreen> {
                         .take(5)
                         .map(
                           (l) => _buildDetectedVisionItem(
-                            l.description,
-                            'Skor: ${(l.score * 100).toStringAsFixed(0)}%',
+                            l.description.toString(),
+                            'Skor: ${((l.score) * 100).toStringAsFixed(0)}%',
                           ),
                         ),
                   if (result.objects.isEmpty && result.labels.isEmpty)
