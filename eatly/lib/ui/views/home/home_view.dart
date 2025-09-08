@@ -1,3 +1,4 @@
+import 'package:eatly/ui/views/profile/profile_view.dart';
 import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
 import '../../../core/theme/app_theme.dart';
@@ -18,9 +19,24 @@ class HomeView extends StatelessWidget {
           appBar: AppBar(
             title: const Text('Eatly'),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined),
-                onPressed: () {},
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ProfileView()),
+                    );
+                  },
+                  child: CircleAvatar(
+                    radius: 18,
+                    backgroundColor: AppTheme.primaryColor.withOpacity(0.15),
+                    child: const Icon(
+                      Icons.person,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

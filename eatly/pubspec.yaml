@@ -50,6 +50,8 @@ dependencies:
   retrofit: ^4.7.2
   freezed_annotation: ^3.1.0
   json_annotation: ^4.9.0
+  supabase_flutter: ^2.5.6
+  powersync: ^1.15.2
 
 dev_dependencies:
   flutter_test:

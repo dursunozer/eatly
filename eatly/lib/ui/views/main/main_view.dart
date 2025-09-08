@@ -14,7 +14,8 @@ class MainView extends StatelessWidget {
     return ViewModelBuilder<MainViewModel>.reactive(
       viewModelBuilder: () => MainViewModel(),
       builder: (context, model, child) {
-        final screens = const [HomeView(), NutritionView(), ProfileView()];
+        // Sağ alttaki Profil'i kaldırıp onun yerine Detaylar'ı taşıyacağız.
+        final screens = const [HomeView(), ProfileView(), NutritionView()];
         return Scaffold(
           body: screens[model.currentIndex],
           bottomNavigationBar: Container(
@@ -46,14 +47,14 @@ class MainView extends StatelessWidget {
                   label: 'Ana Sayfa',
                 ),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.bar_chart_outlined),
-                  activeIcon: Icon(Icons.bar_chart),
-                  label: 'Detaylar',
-                ),
-                BottomNavigationBarItem(
                   icon: Icon(Icons.person_outline),
                   activeIcon: Icon(Icons.person),
                   label: 'Profil',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.bar_chart_outlined),
+                  activeIcon: Icon(Icons.bar_chart),
+                  label: 'Detaylar',
                 ),
               ],
             ),
