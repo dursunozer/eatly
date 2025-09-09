@@ -98,7 +98,7 @@ class ProfileView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Text(model.name, style: Theme.of(context).textTheme.headlineMedium),
+          Text(model.name ?? '-', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 4),
           if (model.email != null)
             Text(model.email!, style: const TextStyle(color: AppTheme.textSecondary)),
@@ -108,13 +108,13 @@ class ProfileView extends StatelessWidget {
   }
 
   Widget _profileForm(BuildContext context, ProfileViewModel model) {
-    final nameCtrl = TextEditingController(text: model.name);
-    final ageCtrl = TextEditingController(text: model.age.toString());
-    final weightCtrl = TextEditingController(text: model.weight.toString());
-    final heightCtrl = TextEditingController(text: model.height.toString());
+    final nameCtrl = TextEditingController(text: model.name ?? '');
+    final ageCtrl = TextEditingController(text: model.age?.toString() ?? '');
+    final weightCtrl = TextEditingController(text: model.weight?.toString() ?? '');
+    final heightCtrl = TextEditingController(text: model.height?.toString() ?? '');
     final waistCtrl = TextEditingController(text: model.waistCm?.toString() ?? '');
     final hipCtrl = TextEditingController(text: model.hipCm?.toString() ?? '');
-    String gender = model.gender;
+    String gender = model.gender ?? 'Erkek';
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -150,9 +150,9 @@ class ProfileView extends StatelessWidget {
                   : () async {
                     await model.saveProfile(
                       newName: nameCtrl.text.trim(),
-                      newAge: int.tryParse(ageCtrl.text) ?? model.age,
-                      newWeight: double.tryParse(weightCtrl.text) ?? model.weight,
-                      newHeight: double.tryParse(heightCtrl.text) ?? model.height,
+                      newAge: int.tryParse(ageCtrl.text) ?? (model.age ?? 0),
+                      newWeight: double.tryParse(weightCtrl.text) ?? (model.weight ?? 0),
+                      newHeight: double.tryParse(heightCtrl.text) ?? (model.height ?? 0),
                       newGender: gender,
                       newWaistCm: double.tryParse(waistCtrl.text),
                       newHipCm: double.tryParse(hipCtrl.text),

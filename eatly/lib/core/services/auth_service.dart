@@ -22,11 +22,13 @@ class AuthService {
     required String email,
     required String password,
     String? emailRedirectTo,
+    Map<String, dynamic>? metadata,
   }) async {
     final res = await _client.auth.signUp(
       email: email.trim(),
       password: password,
       emailRedirectTo: emailRedirectTo,
+      data: metadata,
     );
     return res.user?.id;
   }

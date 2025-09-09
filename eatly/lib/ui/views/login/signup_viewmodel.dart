@@ -1,7 +1,7 @@
 import 'package:stacked/stacked.dart';
 import '../../../core/services/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/services/profile_service.dart';
+// Profil oluşturmayı giriş sonrasına bırakıyoruz; burada kullanmıyoruz
 
 class SignupViewModel extends BaseViewModel {
   Future<String?> signUpExtended({
@@ -21,32 +21,25 @@ class SignupViewModel extends BaseViewModel {
         return 'Geçerli bir e‑posta ve en az 6 haneli şifre girin.';
       }
 
-      // Kullanıcıyı oluştur ve mümkünse oturumu aç
-      String? uid = await AuthService.signUpWithPassword(
+      // Kullanıcıyı oluştur (e‑posta doğrulaması gerektiren projelerde
+      // burada oturum açmaya çalışmayacağız)
+      final String? uid = await AuthService.signUpWithPassword(
         email: email,
         password: password,
         emailRedirectTo: null,
+        metadata: {
+          'display_name': displayName,
+          if (age != null) 'age': age,
+          if (weight != null) 'weight': weight,
+          if (height != null) 'height': height,
+          if (gender != null) 'gender': gender,
+          if (waistCm != null) 'waist_cm': waistCm,
+          if (hipCm != null) 'hip_cm': hipCm,
+        },
       );
-
-      // Bazı ayarlarda signUp sonrası session oluşmayabilir; tekrar giriş dene
-      uid ??= await AuthService.signInWithPassword(email: email, password: password);
-      // Oturumun gerçekten hazır olmasını bekle (RLS için auth.uid() gerekecek)
-      await Future.delayed(const Duration(milliseconds: 250));
-
-      if (uid != null) {
-        await ProfileService.upsertProfile(
-          uid: uid,
-          displayName: displayName,
-          age: age,
-          weight: weight,
-          height: height,
-          gender: gender,
-          waistCm: waistCm,
-          hipCm: hipCm,
-        );
-      } else {
-        return 'Kullanıcı oluşturuldu ancak oturum açılamadı. Lütfen giriş yapmayı deneyin.';
-      }
+      // Bu aşamada profil upsert etmiyoruz; giriş sonrası (email onaylandıktan sonra)
+      // profil ekranı açıldığında eksikse oluşturulacak.
+      if (uid == null) return 'Kullanıcı oluşturulamadı. Lütfen tekrar deneyin.';
       return null;
     } on AuthException catch (e) {
       final msg = (e.message ?? '').toLowerCase();

@@ -21,7 +21,11 @@ class ProfileService {
     double? waistCm,
     double? hipCm,
   }) async {
-    final sessionUid = _client.auth.currentUser?.id ?? uid;
+    final sessionUid = _client.auth.currentUser?.id ?? _client.auth.currentSession?.user.id;
+    if (sessionUid == null) {
+      // RLS nedeniyle anonim istekle INSERT/UPSERT yapamayız; önce auth gerekir
+      throw StateError('Authenticated session is required before upserting profile.');
+    }
     final data = <String, dynamic>{
       'id': sessionUid,
       if (displayName != null) 'display_name': displayName,
@@ -34,7 +38,26 @@ class ProfileService {
       if (hipCm != null) 'hip_cm': hipCm,
       'updated_at': DateTime.now().toIso8601String(),
     };
-    await _client.from('profiles').upsert(data, onConflict: 'id');
+    // İlk kullanıcı oluşturma anında auth.users satırı henüz görünür olmayabilir
+    // (özellikle yeni projelerde). FK 23503 hatasını kısa bir süre toleransla tekrar dene.
+    PostgrestException? lastFkErr;
+    for (int attempt = 0; attempt < 6; attempt++) {
+      try {
+        await _client.from('profiles').upsert(data, onConflict: 'id');
+        lastFkErr = null;
+        break;
+      } on PostgrestException catch (e) {
+        if (e.code == '23503' || (e.message ?? '').toLowerCase().contains('foreign key')) {
+          lastFkErr = e;
+          await Future.delayed(const Duration(milliseconds: 300));
+          continue;
+        }
+        rethrow;
+      }
+    }
+    if (lastFkErr != null) {
+      throw lastFkErr;
+    }
   }
 
   static Future<String?> uploadAvatar({
