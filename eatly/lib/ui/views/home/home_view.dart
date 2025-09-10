@@ -3,6 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/food_item.dart';
+import '../../../core/models/meal_photo.dart';
+import '../../../core/services/meal_photo_service.dart';
+import '../../../core/services/photo_service.dart';
+import '../../../core/services/powersync_service.dart';
+import 'dart:io';
 import 'home_viewmodel.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 
@@ -197,55 +202,111 @@ class HomeView extends StatelessWidget {
   }
 
   Widget _buildRecentMeals(HomeViewModel model) {
-    final foods = model.todaySummary.foods;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
+          children: const [
+            Text(
               'Son Öğünler',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
             ),
-            TextButton(onPressed: () {}, child: const Text('Tümünü Gör')),
           ],
         ),
         const SizedBox(height: 16),
-        if (foods.isEmpty)
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Center(
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.restaurant_menu,
-                      size: 64,
-                      color: Colors.grey.shade300,
+        FutureBuilder<List<String>>(
+          future: _loadCombinedPhotos(),
+          builder: (context, snapshot) {
+            final photos = snapshot.data ?? <String>[];
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (photos.isEmpty) {
+              return Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.restaurant_menu,
+                          size: 64,
+                          color: Colors.grey.shade300,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Henüz öğün eklemediniz',
+                          style: TextStyle(color: AppTheme.textSecondary),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Henüz öğün eklemediniz',
-                      style: TextStyle(color: AppTheme.textSecondary),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          )
-        else
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: foods.length,
-            itemBuilder: (context, index) {
-              final food = foods[index];
-              return _buildFoodItem(food);
-            },
-          ),
+              );
+            }
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: photos.length,
+              itemBuilder: (context, index) {
+                final url = photos[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: url.startsWith('file://')
+                        ? Image.file(
+                            File(url.replaceFirst('file://', '')),
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: 200,
+                          )
+                        : Image.network(
+                            url,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: 200,
+                          ),
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ],
     );
+  }
+
+  Future<List<String>> _loadCombinedPhotos() async {
+    // 1) Offline kuyruktan bugünkü senkronlanmamış dosyaları al (en yeni üste)
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day);
+    List<Map<String, Object?>> local = <Map<String, Object?>>[];
+    try {
+      final rows = await AppPowerSync.instance.db.getAll(
+        'select local_path, taken_at from local_photos where is_synced = 0 and taken_at >= ? order by taken_at desc',
+        [start.toIso8601String()],
+      );
+      local = rows
+          .map((r) => {
+                'local_path': r['local_path'] as String,
+                'taken_at': r['taken_at'] as String,
+              })
+          .toList();
+    } catch (_) {
+      // Web veya DB hazır değilse local list boş kalsın
+    }
+
+    // 2) Supabase'ten bugünkü senkronlanmış URL'ler
+    final remote = await PhotoService.fetchTodayPhotoUrls();
+
+    // 3) Birleştir: önce local (file://), sonra remote
+    final combined = <String>[
+      ...local.map((e) => 'file://${e['local_path']}'),
+      ...remote,
+    ];
+    return combined;
   }
 
   Widget _buildFoodItem(FoodItem food) {

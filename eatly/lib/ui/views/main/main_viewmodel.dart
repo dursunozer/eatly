@@ -7,6 +7,7 @@ class MainViewModel extends BaseViewModel {
   final _nav = locator<NavigationService>();
 
   int currentIndex = 0;
+  int refreshTick = 0; // HomeView'i zorla yeniden oluşturmak için artan sayaç
 
   void onTabSelected(int index) {
     currentIndex = index;
@@ -14,6 +15,11 @@ class MainViewModel extends BaseViewModel {
   }
 
   Future<void> goToCamera() async {
-    await _nav.navigateToView(const CameraScreen());
+    final result = await _nav.navigateToView(const CameraScreen());
+    // Kamera sayfasından true dönerse ana sayfayı yenilemek için notifyListeners
+    if (result == true) {
+      refreshTick++;
+      notifyListeners();
+    }
   }
 }

@@ -20,6 +20,7 @@ class ProfileService {
     String? avatarUrl,
     double? waistCm,
     double? hipCm,
+    String? timezone,
   }) async {
     final sessionUid = _client.auth.currentUser?.id ?? _client.auth.currentSession?.user.id;
     if (sessionUid == null) {
@@ -36,6 +37,7 @@ class ProfileService {
       if (avatarUrl != null) 'avatar_url': avatarUrl,
       if (waistCm != null) 'waist_cm': waistCm,
       if (hipCm != null) 'hip_cm': hipCm,
+      if (timezone != null) 'timezone': timezone,
       'updated_at': DateTime.now().toIso8601String(),
     };
     // İlk kullanıcı oluşturma anında auth.users satırı henüz görünür olmayabilir
@@ -65,8 +67,13 @@ class ProfileService {
     required String uid,
   }) async {
     final path = 'avatars/$uid/${DateTime.now().millisecondsSinceEpoch}.jpg';
-    await _client.storage.from('user-photos').uploadBinary(path, bytes, fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true));
-    final url = _client.storage.from('user-photos').getPublicUrl(path);
+    await _client.storage.from('food_images').uploadBinary(path, bytes, fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true));
+    String url;
+    try {
+      url = await _client.storage.from('food_images').createSignedUrl(path, 3600);
+    } catch (_) {
+      url = _client.storage.from('food_images').getPublicUrl(path);
+    }
     return url;
   }
 }

@@ -15,7 +15,12 @@ class MainView extends StatelessWidget {
       viewModelBuilder: () => MainViewModel(),
       builder: (context, model, child) {
         // Sağ alttaki Profil'i kaldırıp onun yerine Detaylar'ı taşıyacağız.
-        final screens = const [HomeView(), ProfileView(), NutritionView()];
+        final screens = [
+          // refreshTick değiştiğinde yeni Key ile HomeView yeniden kurulur
+          KeyedSubtree(key: ValueKey('home-${model.refreshTick}'), child: const HomeView()),
+          const ProfileView(),
+          const NutritionView(),
+        ];
         return Scaffold(
           body: screens[model.currentIndex],
           bottomNavigationBar: Container(

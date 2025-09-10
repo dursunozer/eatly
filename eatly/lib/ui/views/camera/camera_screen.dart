@@ -11,6 +11,10 @@ import '../../../core/models/vision_models.dart' as vr;
 import '../../../core/models/vision_api/vision_request.dart';
 import '../../../core/models/vision_api/vision_response.dart';
 import '../../../api/vision_api_client.dart';
+import '../../../core/services/photo_service.dart';
+import '../../../core/services/powersync_service.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 const String VISION_API_KEY = "AIzaSyBPwumSTFWb_DMlXFH0PqC-SyHogdic71E";
 
@@ -139,15 +143,17 @@ class _CameraScreenState extends State<CameraScreen> {
 
       // Retrofit istemcisiyle çağrı
       final client = VisionApiClient(dio, baseUrl: VISION_BASE_URL);
-      final request = VisionApiRequest(requests: [
+      final request = VisionApiRequest(
+        requests: [
         RequestItem(
           image: ImageContent(content: base64Image),
           features: [
             Feature(type: 'LABEL_DETECTION', maxResults: 10),
             Feature(type: 'OBJECT_LOCALIZATION'),
           ],
-        )
-      ]);
+          ),
+        ],
+      );
 
       final VisionApiResponse apiRes = await client.annotateImage(
         request,
@@ -278,14 +284,78 @@ class _CameraScreenState extends State<CameraScreen> {
                     ),
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
+                    onPressed: () async {
+                      try {
+                        // Vision sonuçlarını basit JSON listelerine dönüştürelim
+                        final labelJson = result.labels
+                            .map(
+                              (l) => {
+                                'description': l.description,
+                                'score': l.score,
+                              },
+                            )
+                            .toList();
+                        final objectJson = result.objects
+                            .map((o) => {'name': o.name, 'score': o.score})
+                            .toList();
+
+                        // Fotoğrafı cihaz dizinine yazma: sadece mobil/desktop (web'de path_provider yok)
+                        try {
+                          final id = DateTime.now().millisecondsSinceEpoch
+                              .toString();
+                          final dir = await getApplicationDocumentsDirectory();
+                          final String filePath = '${dir.path}/meal_$id.jpg';
+                          final file = File(filePath);
+                          await file.writeAsBytes(imageBytes, flush: true);
+
+                          await AppPowerSync.instance.db.execute(
+                            'insert into local_photos (id, local_path, taken_at, is_synced) values (?, ?, ?, ?)',
+                            [id, filePath, DateTime.now().toIso8601String(), 0],
+                          );
+                        } catch (_) {
+                          // Web veya platform desteği yoksa sessizce devam et
+                        }
+
+                        // Supabase'e kaydet (online ise)
+                        String savedPath;
+                        try {
+                          savedPath = await PhotoService.saveUserMealPhoto(
+                            bytes: imageBytes,
+                            labels: labelJson,
+                            objects: objectJson,
+                          );
+                        } catch (_) {
+                          savedPath = '';
+                        }
+
+                        // Doğrulama: kayıt gerçekten oluşmuş mu?
+                        if (savedPath.isNotEmpty) {
+                          final ok = await PhotoService.existsUserPhoto(
+                            storagePath: savedPath,
+                          );
+                          if (!ok) {
+                            throw StateError('Kayıt doğrulanamadı');
+                          }
+                        }
+
+                        if (mounted) Navigator.pop(context);
+                        if (!mounted) return;
+                        Navigator.of(context).pop(true);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Besinler kaydedildi!'),
+                            content: Text('Fotoğraf kaydedildi!'),
                           backgroundColor: AppTheme.primaryColor,
                         ),
                       );
+                      } catch (e) {
+                        if (mounted) Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Kaydetme hatası: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
                     },
                     child: const Text('Kaydet'),
                   ),
