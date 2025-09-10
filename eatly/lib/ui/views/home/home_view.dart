@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/food_item.dart';
-import '../../../core/models/meal_photo.dart';
-import '../../../core/services/meal_photo_service.dart';
 import '../../../core/services/photo_service.dart';
 import '../../../core/services/powersync_service.dart';
 import 'dart:io';
@@ -289,10 +287,12 @@ class HomeView extends StatelessWidget {
         [start.toIso8601String()],
       );
       local = rows
-          .map((r) => {
-                'local_path': r['local_path'] as String,
-                'taken_at': r['taken_at'] as String,
-              })
+          .map(
+            (r) => {
+              'local_path': r['local_path'] as String,
+              'taken_at': r['taken_at'] as String,
+            },
+          )
           .toList();
     } catch (_) {
       // Web veya DB hazır değilse local list boş kalsın

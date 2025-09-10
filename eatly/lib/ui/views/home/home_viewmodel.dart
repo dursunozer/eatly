@@ -14,7 +14,7 @@ class HomeViewModel extends BaseViewModel {
   String get greeting {
     final hour = DateTime.now().hour;
     if (hour < 12) return 'Günaydınnnn! ☀️';
-    if (hour < 17) return 'İyi Öğlenler! 🌤️';
+    if (hour < 17) return 'İyi Öğlenlerr! 🌤️';
     return 'İyi Akşamlar! 🌙';
   }
 }

@@ -5,6 +5,7 @@ import '../home/home_view.dart';
 import '../nutrition/nutrition_view.dart';
 import '../profile/profile_view.dart';
 import 'main_viewmodel.dart';
+import '../../common/pill_nav_bar.dart';
 
 class MainView extends StatelessWidget {
   const MainView({super.key});
@@ -17,60 +18,64 @@ class MainView extends StatelessWidget {
         // Sağ alttaki Profil'i kaldırıp onun yerine Detaylar'ı taşıyacağız.
         final screens = [
           // refreshTick değiştiğinde yeni Key ile HomeView yeniden kurulur
-          KeyedSubtree(key: ValueKey('home-${model.refreshTick}'), child: const HomeView()),
+          KeyedSubtree(
+            key: ValueKey('home-${model.refreshTick}'),
+            child: const HomeView(),
+          ),
           const ProfileView(),
           const NutritionView(),
         ];
         return Scaffold(
-          body: screens[model.currentIndex],
-          bottomNavigationBar: Container(
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
+          body: Stack(
+            children: [
+              Positioned.fill(child: screens[model.currentIndex]),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 17,
+                child: PillNavBar(
+                  currentIndex: model.currentIndex,
+                  onTap: model.onTabSelected,
+                  items: const [
+                    PillNavItemData(
+                      Icons.home_rounded,
+                      'Giriş',
+                      outlineIcon: Icons.home_outlined,
+                    ),
+                    PillNavItemData(
+                      Icons.favorite,
+                      'Detaylar',
+                      outlineIcon: Icons.favorite_border,
+                    ),
+                    PillNavItemData(
+                      Icons.chat_bubble,
+                      '',
+                      outlineIcon: Icons.chat_bubble_outline,
+                    ),
+                    PillNavItemData(
+                      Icons.person,
+                      'Profil',
+                      outlineIcon: Icons.person_outline,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: BottomNavigationBar(
-              currentIndex: model.currentIndex,
-              onTap: model.onTabSelected,
-              type: BottomNavigationBarType.fixed,
-              backgroundColor: Colors.white,
-              selectedItemColor: AppTheme.primaryColor,
-              unselectedItemColor: AppTheme.textSecondary,
-              selectedLabelStyle: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
               ),
-              unselectedLabelStyle: const TextStyle(fontSize: 12),
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home_outlined),
-                  activeIcon: Icon(Icons.home),
-                  label: 'Ana Sayfa',
+              Positioned(
+                right: 16,
+                bottom: 78,
+                child: SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: FloatingActionButton(
+                    onPressed: model.goToCamera,
+                    backgroundColor: const Color.fromARGB(255, 242, 252, 219),
+                    shape: const CircleBorder(),
+                    child: const Icon(Icons.camera_alt, color: Colors.black),
+                  ),
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person_outline),
-                  activeIcon: Icon(Icons.person),
-                  label: 'Profil',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.bar_chart_outlined),
-                  activeIcon: Icon(Icons.bar_chart),
-                  label: 'Detaylar',
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: model.goToCamera,
-            backgroundColor: AppTheme.primaryColor,
-            child: const Icon(Icons.camera_alt, color: Colors.white),
-          ),
-          floatingActionButtonLocation:
-              FloatingActionButtonLocation.centerDocked,
         );
       },
     );
