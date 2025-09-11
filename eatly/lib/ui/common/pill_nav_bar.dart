@@ -25,7 +25,7 @@ class PillNavBar extends StatelessWidget {
     this.selectedColor = const Color.fromARGB(255, 242, 252, 219),
     this.unselectedBg = const Color(0x22999999),
     this.unselectedIcon = const Color(0xFFFFFFFF),
-    this.barWidth = 300,
+    this.barWidth = 320,
     this.barHeight = 60,
   });
 

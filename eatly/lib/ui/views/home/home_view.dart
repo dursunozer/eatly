@@ -21,27 +21,6 @@ class HomeView extends StatelessWidget {
           backgroundColor: AppTheme.backgroundColor,
           appBar: AppBar(
             title: const Text('Eatly'),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ProfileView()),
-                    );
-                  },
-                  child: CircleAvatar(
-                    radius: 18,
-                    backgroundColor: AppTheme.primaryColor.withOpacity(0.15),
-                    child: const Icon(
-                      Icons.person,
-                      color: AppTheme.primaryColor,
-                    ),
-                  ),
-                ),
-              ),
-            ],
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16),

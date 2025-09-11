@@ -4,6 +4,8 @@ import '../../../core/theme/app_theme.dart';
 import '../home/home_view.dart';
 import '../nutrition/nutrition_view.dart';
 import '../profile/profile_view.dart';
+import '../suggestion/suggestion_view.dart';
+import '../sport/sport_view.dart';
 import 'main_viewmodel.dart';
 import '../../common/pill_nav_bar.dart';
 
@@ -15,15 +17,15 @@ class MainView extends StatelessWidget {
     return ViewModelBuilder<MainViewModel>.reactive(
       viewModelBuilder: () => MainViewModel(),
       builder: (context, model, child) {
-        // Sağ alttaki Profil'i kaldırıp onun yerine Detaylar'ı taşıyacağız.
         final screens = [
-          // refreshTick değiştiğinde yeni Key ile HomeView yeniden kurulur
           KeyedSubtree(
             key: ValueKey('home-${model.refreshTick}'),
             child: const HomeView(),
           ),
-          const ProfileView(),
           const NutritionView(),
+          const SuggestionView(),
+          const SportView(),
+          const ProfileView(),
         ];
         return Scaffold(
           body: Stack(
@@ -43,14 +45,19 @@ class MainView extends StatelessWidget {
                       outlineIcon: Icons.home_outlined,
                     ),
                     PillNavItemData(
-                      Icons.favorite,
-                      'Detaylar',
-                      outlineIcon: Icons.favorite_border,
+                      Icons.history_rounded,
+                      'Geçmiş',
+                      outlineIcon: Icons.history_toggle_off,
                     ),
                     PillNavItemData(
-                      Icons.chat_bubble,
-                      '',
-                      outlineIcon: Icons.chat_bubble_outline,
+                      Icons.lightbulb,
+                      'Öneriler',
+                      outlineIcon: Icons.lightbulb_outline,
+                    ),
+                    PillNavItemData(
+                      Icons.fitness_center,
+                      'Spor',
+                      outlineIcon: Icons.fitness_center_outlined,
                     ),
                     PillNavItemData(
                       Icons.person,
