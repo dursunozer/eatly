@@ -1,6 +1,7 @@
 import 'package:stacked/stacked.dart';
 import '../../../core/services/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/config/policy_config.dart';
 // Profil oluşturmayı giriş sonrasına bırakıyoruz; burada kullanmıyoruz
 
 class SignupViewModel extends BaseViewModel {
@@ -14,6 +15,8 @@ class SignupViewModel extends BaseViewModel {
     String? gender,
     double? waistCm,
     double? hipCm,
+    required bool kvkkAccepted,
+    required bool healthAccepted,
   }) async {
     setBusy(true);
     try {
@@ -40,6 +43,20 @@ class SignupViewModel extends BaseViewModel {
       // Bu aşamada profil upsert etmiyoruz; giriş sonrası (email onaylandıktan sonra)
       // profil ekranı açıldığında eksikse oluşturulacak.
       if (uid == null) return 'Kullanıcı oluşturulamadı. Lütfen tekrar deneyin.';
+
+      // KVKK ve sağlık verisi açık rızalarını kaydet
+      try {
+        final client = Supabase.instance.client;
+        await client.from('user_consents').insert({
+          'user_id': client.auth.currentUser?.id ?? uid,
+          'kvkk_accepted': kvkkAccepted,
+          'healthdata_accepted': healthAccepted,
+          'policy_version': PolicyConfig.policyVersion,
+          'accepted_at': DateTime.now().toUtc().toIso8601String(),
+        });
+      } catch (e) {
+        // Onay kaydı zorunlu değilse sessiz devam; ancak istenirse hata döndürülebilir
+      }
       return null;
     } on AuthException catch (e) {
       final msg = (e.message ?? '').toLowerCase();

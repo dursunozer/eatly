@@ -29,7 +29,6 @@ class PhotoService {
           fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: false),
         );
 
-    final String publicUrl = _client.storage.from(_bucket).getPublicUrl(path);
 
     final Map<String, dynamic> row = {
       'user_id': uid,
@@ -46,17 +45,7 @@ class PhotoService {
 
     await _client.from('user_photos').insert(row);
 
-    // İsteğe bağlı olarak basit bir kayıt da tutmak isterseniz:
-    try {
-      await _client.from('photos').insert({
-        'user_id': uid,
-        'storage_path': path,
-        'public_url': publicUrl,
-        'taken_at': (takenAt ?? now).toIso8601String(),
-      });
-    } catch (_) {
-      // Bu tablo yoksa ya da RLS farklı ise hatayı yutuyoruz; ana kayıt user_photos'ta.
-    }
+    // Güvenlik: public URL kaydı tutmuyoruz; gerektiğinde imzalı URL üretilir.
 
     return path;
   }
@@ -75,15 +64,14 @@ class PhotoService {
     final List<String> paths =
         res.map((e) => e['storage_path'] as String).toList();
 
-    // Bucket public değilse imzalı URL üretelim (1 saat geçerli)
+    // Yalnızca imzalı URL üretelim (1 saat geçerli). Başarısız olanları atla.
     final List<String> urls = [];
     for (final path in paths) {
       try {
         final signed = await storage.createSignedUrl(path, 3600);
         urls.add(signed);
       } catch (_) {
-        // Eğer public ise fallback olarak public URL döner
-        urls.add(storage.getPublicUrl(path));
+        // İmzalı URL üretilemezse bu öğeyi atlıyoruz.
       }
     }
     return urls;

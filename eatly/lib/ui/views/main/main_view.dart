@@ -16,6 +16,10 @@ class MainView extends StatelessWidget {
     return ViewModelBuilder<MainViewModel>.reactive(
       viewModelBuilder: () => MainViewModel(),
       builder: (context, model, child) {
+        // Uygulama görünür olduğunda politika güncellemesini kontrol et
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          model.ensurePolicyUpToDate();
+        });
         final screens = [
           KeyedSubtree(
             key: ValueKey('home-${model.refreshTick}'),

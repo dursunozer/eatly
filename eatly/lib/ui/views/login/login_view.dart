@@ -5,6 +5,7 @@ import 'package:stacked/stacked.dart';
 import 'login_viewmodel.dart';
 import 'signup_view.dart';
 import 'forgot_password_view.dart';
+import 'consent_update_view.dart';
 
 class LoginView extends StackedView<LoginViewModel> {
   const LoginView({Key? key}) : super(key: key);
@@ -99,6 +100,13 @@ class _LoginFormState extends State<_LoginForm> {
                   final ok = await vm.signIn(_email.text, _password.text);
                   if (!mounted) return;
                   if (ok) {
+                    if (widget.viewModel.requirePolicyUpdate) {
+                      final updated = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ConsentUpdateView()),
+                      );
+                      if (updated != true) return;
+                    }
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (_) => const MainView()),

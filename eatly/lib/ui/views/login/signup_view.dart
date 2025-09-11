@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
+import 'package:url_launcher/url_launcher_string.dart';
+import '../../../core/config/policy_config.dart';
 import 'signup_viewmodel.dart';
 
 class SignupView extends StatefulWidget {
@@ -19,6 +21,8 @@ class _SignupViewState extends State<SignupView> {
   late final TextEditingController _waist;
   late final TextEditingController _hip;
   String _gender = 'Erkek';
+  bool _acceptKvkk = false;
+  bool _acceptHealth = false;
 
   @override
   void initState() {
@@ -85,11 +89,75 @@ class _SignupViewState extends State<SignupView> {
                     onChanged: (v) => setState(() => _gender = v ?? 'Erkek'),
                     decoration: const InputDecoration(labelText: 'Cinsiyet'),
                   ),
+                  const SizedBox(height: 12),
+                  CheckboxListTile(
+                    value: _acceptKvkk,
+                    onChanged: (v) => setState(() => _acceptKvkk = v ?? false),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    title: const Text(
+                      'KVKK ve Gizlilik Politikası\'nı okudum, anladım ve kabul ediyorum.',
+                    ),
+                    subtitle: const Text(
+                      'Devam ederek verilerinizin işlenmesine ilişkin aydınlatma metnini kabul etmiş olursunuz.',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                  CheckboxListTile(
+                    value: _acceptHealth,
+                    onChanged: (v) => setState(() => _acceptHealth = v ?? false),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    title: const Text(
+                      'Sağlık verilerimin beslenme takibi amacıyla işlenmesine açık rıza veriyorum.',
+                    ),
+                    subtitle: const Text(
+                      'Bu onay, boy/kilo vb. özel nitelikli veriler için gereklidir.',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      children: [
+                        Text(
+                          'Politika sürümü: ${PolicyConfig.policyVersion}',
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            final ok = await launchUrlString(
+                              PolicyConfig.policyUrl,
+                              mode: LaunchMode.externalApplication,
+                            );
+                            if (!ok && mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Politika açılırken bir sorun oluştu.')),
+                              );
+                            }
+                          },
+                          child: const Text('KVKK ve Gizlilik Politikasını oku'),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: viewModel.isBusy
                         ? null
                         : () async {
+                            if (!_acceptKvkk) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Devam etmek için KVKK ve Gizlilik onaylarını kabul etmelisiniz.')),
+                              );
+                              return;
+                            }
+                            if (!_acceptHealth) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Devam etmek için sağlık verisi açık rızasını vermelisiniz.')),
+                              );
+                              return;
+                            }
                             final err = await viewModel.signUpExtended(
                               email: _email.text,
                               password: _password.text,
@@ -100,6 +168,8 @@ class _SignupViewState extends State<SignupView> {
                               gender: _gender,
                               waistCm: double.tryParse(_waist.text),
                               hipCm: double.tryParse(_hip.text),
+                              kvkkAccepted: _acceptKvkk,
+                              healthAccepted: _acceptHealth,
                             );
                             if (!mounted) return;
                             if (err == null) {

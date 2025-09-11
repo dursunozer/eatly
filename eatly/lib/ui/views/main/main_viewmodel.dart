@@ -2,6 +2,8 @@ import 'package:stacked/stacked.dart';
 import 'package:stacked_services/stacked_services.dart';
 import '../../../app/app.locator.dart';
 import '../camera/camera_screen.dart';
+import '../../views/login/consent_update_view.dart';
+import '../../../core/services/consent_service.dart';
 
 class MainViewModel extends BaseViewModel {
   final _nav = locator<NavigationService>();
@@ -21,5 +23,14 @@ class MainViewModel extends BaseViewModel {
       refreshTick++;
       notifyListeners();
     }
+  }
+
+  Future<void> ensurePolicyUpToDate() async {
+    try {
+      final ok = await ConsentService.hasAcceptedCurrentPolicy();
+      if (!ok) {
+        await _nav.navigateToView(const ConsentUpdateView());
+      }
+    } catch (_) {}
   }
 }

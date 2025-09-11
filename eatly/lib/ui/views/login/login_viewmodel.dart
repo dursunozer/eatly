@@ -1,11 +1,13 @@
 import 'package:stacked/stacked.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/consent_service.dart';
 
 class LoginViewModel extends BaseViewModel {
   bool isBusySignIn = false;
   String? lastError;
   String? lastUid;
+  bool requirePolicyUpdate = false;
 
   Future<bool> signIn(String email, String password) async {
     isBusySignIn = true;
@@ -17,7 +19,14 @@ class LoginViewModel extends BaseViewModel {
       );
       lastUid = uid;
       lastError = null;
-      return uid != null;
+      if (uid == null) return false;
+      // Politika versiyon kontrolü
+      try {
+        requirePolicyUpdate = !(await ConsentService.hasAcceptedCurrentPolicy());
+      } catch (_) {
+        requirePolicyUpdate = false;
+      }
+      return true;
     } on AuthException catch (e) {
       lastError = e.message;
       return false;
