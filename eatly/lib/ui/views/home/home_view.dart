@@ -1,4 +1,3 @@
-import 'package:eatly/ui/views/profile/profile_view.dart';
 import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
 import '../../../core/theme/app_theme.dart';
@@ -16,21 +15,20 @@ class HomeView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ViewModelBuilder<HomeViewModel>.reactive(
       viewModelBuilder: () => HomeViewModel(),
+      onViewModelReady: (m) => m.init(),
       builder: (context, model, child) {
         return Scaffold(
           backgroundColor: AppTheme.backgroundColor,
-          appBar: AppBar(
-            title: const Text('Eatly'),
-          ),
+          //appBar: AppBar(title: const Text('Eatly')),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildWelcomeCard(model),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 _buildDailySummaryCard(context, model),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 _buildRecentMeals(model),
               ],
             ),
@@ -64,8 +62,8 @@ class HomeView extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            model.formattedDate,
-            style: const TextStyle(fontSize: 16, color: Colors.white70),
+            model.displayName ?? model.formattedDate,
+            style: const TextStyle(fontSize: 16, color: Colors.white),
           ),
         ],
       ),

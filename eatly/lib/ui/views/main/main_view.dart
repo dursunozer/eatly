@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
-import '../../../core/theme/app_theme.dart';
 import '../home/home_view.dart';
 import '../nutrition/nutrition_view.dart';
 import '../profile/profile_view.dart';

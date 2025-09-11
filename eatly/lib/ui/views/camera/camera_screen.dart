@@ -12,9 +12,11 @@ import '../../../core/models/vision_api/vision_request.dart';
 import '../../../core/models/vision_api/vision_response.dart';
 import '../../../api/vision_api_client.dart';
 import '../../../core/services/photo_service.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import '../../../core/services/powersync_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 const String VISION_API_KEY = "AIzaSyBPwumSTFWb_DMlXFH0PqC-SyHogdic71E";
 
@@ -46,7 +48,7 @@ class _CameraScreenState extends State<CameraScreen> {
       if (_cameras != null && _cameras!.isNotEmpty) {
         _controller = CameraController(
           _cameras![0], // Varsayılan olarak ilk kamerayı kullan
-          ResolutionPreset.high,
+          ResolutionPreset.ultraHigh, // dosya boyutunu düşür
           enableAudio: false,
         );
         await _controller!.initialize();
@@ -95,6 +97,8 @@ class _CameraScreenState extends State<CameraScreen> {
     try {
       final XFile? image = await _imagePicker.pickImage(
         source: ImageSource.gallery,
+        imageQuality: 80,
+        maxWidth: 1280,
       );
       if (image != null) {
         _navigateToAnalysis(image); // XFile gönderiliyor
@@ -103,6 +107,60 @@ class _CameraScreenState extends State<CameraScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Resim seçilemedi: $e')));
+    }
+  }
+
+  Future<Uint8List> _compressMobile(Uint8List input) async {
+    try {
+      Uint8List current = Uint8List.fromList(
+        await FlutterImageCompress.compressWithList(
+          input,
+          quality: 80,
+          minWidth: 1280,
+          format: CompressFormat.jpeg,
+          autoCorrectionAngle: true,
+          keepExif: false,
+        ),
+      );
+      if (current.lengthInBytes > 250 * 1024) {
+        current = Uint8List.fromList(
+          await FlutterImageCompress.compressWithList(
+            current,
+            quality: 70,
+            minWidth: 1024,
+            format: CompressFormat.jpeg,
+            autoCorrectionAngle: true,
+            keepExif: false,
+          ),
+        );
+      }
+      return current;
+    } catch (_) {
+      return input;
+    }
+  }
+
+  void printFileSize(File file, String label) {
+    try {
+      final bytes = file.lengthSync();
+      final kb = bytes / 1024;
+      final mb = kb / 1024;
+      if (kDebugMode) {
+        debugPrint(
+          '$label: $bytes bytes (${kb.toStringAsFixed(2)} KB / ${mb.toStringAsFixed(2)} MB)',
+        );
+      }
+    } catch (_) {}
+  }
+
+  void _printBytesSize(Uint8List data, String label) {
+    final bytes = data.lengthInBytes;
+    final kb = bytes / 1024;
+    final mb = kb / 1024;
+    if (kDebugMode) {
+      debugPrint(
+        '$label: $bytes bytes (${kb.toStringAsFixed(2)} KB / ${mb.toStringAsFixed(2)} MB)',
+      );
     }
   }
 
@@ -129,8 +187,10 @@ class _CameraScreenState extends State<CameraScreen> {
     );
 
     try {
-      final Uint8List bytes = await imageXFile
-          .readAsBytes(); // XFile'ın kendi readAsBytes() metodu kullanılıyor
+      final Uint8List rawBytes = await imageXFile.readAsBytes();
+      _printBytesSize(rawBytes, 'Raw image');
+      final Uint8List bytes = await _compressMobile(rawBytes);
+      _printBytesSize(bytes, 'Compressed image');
       final String base64Image = base64Encode(
         bytes,
       ); // Görüntüyü Base64'e çevir
@@ -145,12 +205,12 @@ class _CameraScreenState extends State<CameraScreen> {
       final client = VisionApiClient(dio, baseUrl: VISION_BASE_URL);
       final request = VisionApiRequest(
         requests: [
-        RequestItem(
-          image: ImageContent(content: base64Image),
-          features: [
-            Feature(type: 'LABEL_DETECTION', maxResults: 10),
-            Feature(type: 'OBJECT_LOCALIZATION'),
-          ],
+          RequestItem(
+            image: ImageContent(content: base64Image),
+            features: [
+              Feature(type: 'LABEL_DETECTION', maxResults: 10),
+              Feature(type: 'OBJECT_LOCALIZATION'),
+            ],
           ),
         ],
       );
@@ -307,6 +367,7 @@ class _CameraScreenState extends State<CameraScreen> {
                           final String filePath = '${dir.path}/meal_$id.jpg';
                           final file = File(filePath);
                           await file.writeAsBytes(imageBytes, flush: true);
+                          printFileSize(file, 'Saved local file');
 
                           await AppPowerSync.instance.db.execute(
                             'insert into local_photos (id, local_path, taken_at, is_synced) values (?, ?, ?, ?)',
@@ -341,12 +402,12 @@ class _CameraScreenState extends State<CameraScreen> {
                         if (mounted) Navigator.pop(context);
                         if (!mounted) return;
                         Navigator.of(context).pop(true);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
                             content: Text('Fotoğraf kaydedildi!'),
-                          backgroundColor: AppTheme.primaryColor,
-                        ),
-                      );
+                            backgroundColor: AppTheme.primaryColor,
+                          ),
+                        );
                       } catch (e) {
                         if (mounted) Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(

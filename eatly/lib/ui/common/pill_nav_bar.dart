@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 
 class PillNavItemData {
   final IconData icon; // selected (filled)
@@ -25,7 +26,7 @@ class PillNavBar extends StatelessWidget {
     this.selectedColor = const Color.fromARGB(255, 242, 252, 219),
     this.unselectedBg = const Color(0x22999999),
     this.unselectedIcon = const Color(0xFFFFFFFF),
-    this.barWidth = 320,
+    this.barWidth = 325,
     this.barHeight = 60,
   });
 
@@ -37,31 +38,43 @@ class PillNavBar extends StatelessWidget {
         height: barHeight,
         child: Center(
           child: SizedBox(
-            width: barWidth,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.40),
-                borderRadius: BorderRadius.circular(32),
-              ),
-              child: Center(
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 0,
-                  alignment: WrapAlignment.center,
-                  children: List.generate(items.length, (i) {
-                    final selected = i == currentIndex;
-                    final data = items[i];
-                    return _Pill(
-                      selected: selected,
-                      icon: data.icon,
-                      label: data.label,
-                      selectedColor: selectedColor,
-                      unselectedBg: unselectedBg,
-                      unselectedIcon: unselectedIcon,
-                      onTap: () => onTap(i),
-                    );
-                  }),
+            width: () {
+              final maxW = MediaQuery.of(context).size.width - 24;
+              return barWidth > maxW ? maxW : barWidth;
+            }(),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(32),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(32),
+                  ),
+                  child: Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (int i = 0; i < items.length; i++) ...[
+                          if (i > 0) const SizedBox(width: 5),
+                          _Pill(
+                            selected: i == currentIndex,
+                            icon: items[i].icon,
+                            label: items[i].label,
+                            selectedColor: selectedColor,
+                            unselectedBg: Colors.white.withOpacity(0.18),
+                            unselectedIcon: unselectedIcon,
+                            onTap: () => onTap(i),
+                            outlineIcon: items[i].outlineIcon,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -100,9 +113,12 @@ class _Pill extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 0),
-        padding: EdgeInsets.symmetric(horizontal: selected ? 12 : 0),
-        height: 42,
-        constraints: BoxConstraints(minWidth: selected ? 88 : 40),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.symmetric(horizontal: selected ? 12 : 1.75),
+        height: 44,
+        constraints: selected
+            ? const BoxConstraints(minWidth: 92, minHeight: 44)
+            : const BoxConstraints.tightFor(width: 44, height: 44),
         decoration: BoxDecoration(
           color: selected ? selectedColor : unselectedBg,
           borderRadius: BorderRadius.circular(26),
@@ -111,16 +127,23 @@ class _Pill extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
-              padding: EdgeInsets.only(left: selected ? 4 : 12),
+              padding: EdgeInsets.only(left: selected ? 6 : 12),
               child: Icon(
                 selected ? icon : (outlineIcon ?? icon),
-                size: 16,
-                color: selected ? Colors.black : Colors.white,
+                size: selected ? 18 : 16,
+                color: selected ? Colors.black : Colors.black,
               ),
             ),
             if (selected) ...[
               const SizedBox(width: 8),
-              Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
             ],
           ],
         ),
