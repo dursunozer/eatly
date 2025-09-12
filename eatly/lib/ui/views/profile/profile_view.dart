@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:stacked/stacked.dart';
@@ -123,17 +124,46 @@ class ProfileView extends StatelessWidget {
           children: [
             const Text('Kullanıcı Bilgileri', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
-            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Ad Soyad')),
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(labelText: 'Ad Soyad'),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(
+                  RegExp(r"[a-zA-ZğüşöçıİĞÜŞÖÇ ]"),
+                ),
+              ],
+              textCapitalization: TextCapitalization.words,
+            ),
             const SizedBox(height: 8),
-            TextField(controller: ageCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Yaş')),
+            TextField(
+              controller: ageCtrl,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(labelText: 'Yaş')),
             const SizedBox(height: 8),
-            TextField(controller: weightCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Kilo (kg)')),
+            TextField(
+              controller: weightCtrl,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(labelText: 'Kilo (kg)')),
             const SizedBox(height: 8),
-            TextField(controller: heightCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Boy (cm)')),
+            TextField(
+              controller: heightCtrl,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(labelText: 'Boy (cm)')),
             const SizedBox(height: 8),
-            TextField(controller: waistCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Bel çevresi (cm)')),
+            TextField(
+              controller: waistCtrl,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(labelText: 'Bel çevresi (cm)')),
             const SizedBox(height: 8),
-            TextField(controller: hipCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Kalça çevresi (cm)')),
+            TextField(
+              controller: hipCtrl,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(labelText: 'Kalça çevresi (cm)')),
             const SizedBox(height: 8),
             _BmiInline(heightCtrl: heightCtrl, weightCtrl: weightCtrl),
             const SizedBox(height: 8),

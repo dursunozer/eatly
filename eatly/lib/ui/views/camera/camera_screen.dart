@@ -48,7 +48,7 @@ class _CameraScreenState extends State<CameraScreen> {
       if (_cameras != null && _cameras!.isNotEmpty) {
         _controller = CameraController(
           _cameras![0], // Varsayılan olarak ilk kamerayı kullan
-          ResolutionPreset.ultraHigh, // dosya boyutunu düşür
+          ResolutionPreset.low, // dosya boyutunu düşür
           enableAudio: false,
         );
         await _controller!.initialize();

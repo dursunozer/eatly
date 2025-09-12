@@ -20,7 +20,26 @@ class ConsentService {
   }
 
   static Future<bool> hasAcceptedCurrentPolicy() async {
-    final String? current = await _fetchUserPolicyVersion();
+    String? current = await _fetchUserPolicyVersion();
+    if (current == null) {
+      // Fallback: auth metadata'dan ilk onayı çekip veritabanına upsert etmeyi dene
+      final meta = _client.auth.currentUser?.userMetadata ?? {};
+      final bool? metaKvkk = meta['kvkk_accepted'] as bool?;
+      final bool? metaHealth = meta['healthdata_accepted'] as bool?;
+      final String? metaVersion = meta['policy_version'] as String?;
+      if (metaKvkk == true && metaHealth == true && metaVersion != null) {
+        try {
+          await _client.from('user_consents').upsert({
+            'user_id': _client.auth.currentUser!.id,
+            'kvkk_accepted': metaKvkk,
+            'healthdata_accepted': metaHealth,
+            'policy_version': metaVersion,
+            'accepted_at': DateTime.now().toUtc().toIso8601String(),
+          }, onConflict: 'user_id');
+          current = metaVersion;
+        } catch (_) {}
+      }
+    }
     return current == PolicyConfig.policyVersion;
   }
 

@@ -38,6 +38,10 @@ class SignupViewModel extends BaseViewModel {
           if (gender != null) 'gender': gender,
           if (waistCm != null) 'waist_cm': waistCm,
           if (hipCm != null) 'hip_cm': hipCm,
+          // Onaylar: ilk oturum yoksa RLS nedeniyle insert düşebilir; metadata yedek olarak tutulur
+          'kvkk_accepted': kvkkAccepted,
+          'healthdata_accepted': healthAccepted,
+          'policy_version': PolicyConfig.policyVersion,
         },
       );
       // Bu aşamada profil upsert etmiyoruz; giriş sonrası (email onaylandıktan sonra)

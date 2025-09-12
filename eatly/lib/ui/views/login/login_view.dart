@@ -1,6 +1,7 @@
 import 'package:eatly/ui/views/home/home_view.dart';
 import 'package:eatly/ui/views/main/main_view.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:stacked/stacked.dart';
 import 'login_viewmodel.dart';
 import 'signup_view.dart';
@@ -85,18 +86,26 @@ class _LoginFormState extends State<_LoginForm> {
           controller: _email,
           decoration: const InputDecoration(labelText: 'E-posta'),
           keyboardType: TextInputType.emailAddress,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z0-9@_.]")),
+          ],
         ),
         const SizedBox(height: 12),
-        TextField(
-          controller: _password,
-          obscureText: true,
-          decoration: const InputDecoration(labelText: 'Şifre'),
-        ),
+        _PasswordField(controller: _password),
         const SizedBox(height: 16),
         ElevatedButton(
           onPressed: vm.isBusySignIn
               ? null
               : () async {
+                  // Giriş öncesi şifre karmaşıklık kontrolü
+                  final strong = RegExp(r'^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$');
+                  if (!strong.hasMatch(_password.text)) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Şifre en az 8 hane, 1 büyük harf ve 1 özel karakter içermeli.')),
+                    );
+                    return;
+                  }
                   final ok = await vm.signIn(_email.text, _password.text);
                   if (!mounted) return;
                   if (ok) {
@@ -127,6 +136,31 @@ class _LoginFormState extends State<_LoginForm> {
               : const Text('Giriş Yap'),
         ),
       ],
+    );
+  }
+}
+
+class _PasswordField extends StatefulWidget {
+  const _PasswordField({required this.controller});
+  final TextEditingController controller;
+  @override
+  State<_PasswordField> createState() => _PasswordFieldState();
+}
+
+class _PasswordFieldState extends State<_PasswordField> {
+  bool _obscure = true;
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: widget.controller,
+      obscureText: _obscure,
+      decoration: InputDecoration(
+        labelText: 'Şifre',
+        suffixIcon: IconButton(
+          icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+          onPressed: () => setState(() => _obscure = !_obscure),
+        ),
+      ),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:stacked/stacked.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import '../../../core/config/policy_config.dart';
@@ -14,6 +15,7 @@ class SignupView extends StatefulWidget {
 class _SignupViewState extends State<SignupView> {
   late final TextEditingController _email;
   late final TextEditingController _password;
+  late final TextEditingController _passwordConfirm;
   late final TextEditingController _name;
   late final TextEditingController _age;
   late final TextEditingController _weight;
@@ -23,12 +25,15 @@ class _SignupViewState extends State<SignupView> {
   String _gender = 'Erkek';
   bool _acceptKvkk = false;
   bool _acceptHealth = false;
+  bool _obscurePassword = true;
+  bool _obscurePasswordConfirm = true;
 
   @override
   void initState() {
     super.initState();
     _email = TextEditingController();
     _password = TextEditingController();
+    _passwordConfirm = TextEditingController();
     _name = TextEditingController();
     _age = TextEditingController();
     _weight = TextEditingController();
@@ -41,6 +46,7 @@ class _SignupViewState extends State<SignupView> {
   void dispose() {
     _email.dispose();
     _password.dispose();
+    _passwordConfirm.dispose();
     _name.dispose();
     _age.dispose();
     _weight.dispose();
@@ -62,21 +68,94 @@ class _SignupViewState extends State<SignupView> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  TextField(controller: _name, decoration: const InputDecoration(labelText: 'Ad Soyad')),
+                  TextField(
+                    controller: _name,
+                    decoration: const InputDecoration(labelText: 'Ad Soyad'),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r"[a-zA-ZğüşöçıİĞÜŞÖÇ ]"),
+                      ),
+                    ],
+                    textCapitalization: TextCapitalization.words,
+                  ),
                   const SizedBox(height: 8),
-                  TextField(controller: _email, decoration: const InputDecoration(labelText: 'E-posta')),
+                  TextField(
+                    controller: _email,
+                    decoration: const InputDecoration(labelText: 'E-posta'),
+                    keyboardType: TextInputType.emailAddress,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r"[a-zA-Z0-9@_.]"),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 8),
-                  TextField(controller: _password, decoration: const InputDecoration(labelText: 'Şifre'), obscureText: true),
+                  TextField(
+                    controller: _password,
+                    decoration: InputDecoration(
+                      labelText: 'Şifre',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      ),
+                    ),
+                    obscureText: _obscurePassword,
+                  ),
                   const SizedBox(height: 8),
-                  TextField(controller: _age, decoration: const InputDecoration(labelText: 'Yaş'), keyboardType: TextInputType.number),
+                  TextField(
+                    controller: _passwordConfirm,
+                    decoration: InputDecoration(
+                      labelText: 'Şifrenizi tekrar girin',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePasswordConfirm ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: () => setState(() => _obscurePasswordConfirm = !_obscurePasswordConfirm),
+                      ),
+                    ),
+                    obscureText: _obscurePasswordConfirm,
+                  ),
                   const SizedBox(height: 8),
-                  TextField(controller: _weight, decoration: const InputDecoration(labelText: 'Kilo (kg)'), keyboardType: TextInputType.number),
+                  TextField(
+                    controller: _age,
+                    decoration: const InputDecoration(labelText: 'Yaş'),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  ),
                   const SizedBox(height: 8),
-                  TextField(controller: _height, decoration: const InputDecoration(labelText: 'Boy (cm)'), keyboardType: TextInputType.number),
+                  TextField(
+                    controller: _weight,
+                    decoration: const InputDecoration(labelText: 'Kilo (kg)'),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  ),
                   const SizedBox(height: 8),
-                  TextField(controller: _waist, decoration: const InputDecoration(labelText: 'Bel çevresi (cm)'), keyboardType: TextInputType.number),
+                  TextField(
+                    controller: _height,
+                    decoration: const InputDecoration(labelText: 'Boy (cm)'),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  ),
                   const SizedBox(height: 8),
-                  TextField(controller: _hip, decoration: const InputDecoration(labelText: 'Kalça çevresi (cm)'), keyboardType: TextInputType.number),
+                  TextField(
+                    controller: _waist,
+                    decoration: const InputDecoration(
+                      labelText: 'Bel çevresi (cm)',
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _hip,
+                    decoration: const InputDecoration(
+                      labelText: 'Kalça çevresi (cm)',
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  ),
                   const SizedBox(height: 8),
                   _BmiPreview(heightCtrl: _height, weightCtrl: _weight),
                   const SizedBox(height: 8),
@@ -84,7 +163,7 @@ class _SignupViewState extends State<SignupView> {
                     value: _gender,
                     items: const [
                       DropdownMenuItem(value: 'Erkek', child: Text('Erkek')),
-                      DropdownMenuItem(value: 'Kadın', child: Text('Kadın'))
+                      DropdownMenuItem(value: 'Kadın', child: Text('Kadın')),
                     ],
                     onChanged: (v) => setState(() => _gender = v ?? 'Erkek'),
                     decoration: const InputDecoration(labelText: 'Cinsiyet'),
@@ -104,7 +183,8 @@ class _SignupViewState extends State<SignupView> {
                   ),
                   CheckboxListTile(
                     value: _acceptHealth,
-                    onChanged: (v) => setState(() => _acceptHealth = v ?? false),
+                    onChanged: (v) =>
+                        setState(() => _acceptHealth = v ?? false),
                     controlAffinity: ListTileControlAffinity.leading,
                     title: const Text(
                       'Sağlık verilerimin beslenme takibi amacıyla işlenmesine açık rıza veriyorum.',
@@ -120,10 +200,10 @@ class _SignupViewState extends State<SignupView> {
                       crossAxisAlignment: WrapCrossAlignment.center,
                       spacing: 8,
                       children: [
-                        Text(
-                          'Politika sürümü: ${PolicyConfig.policyVersion}',
-                          style: const TextStyle(color: Colors.grey),
-                        ),
+                        //Text(
+                        //  'Politika sürümü: ${PolicyConfig.policyVersion}',
+                        //  style: const TextStyle(color: Colors.grey),
+                        //),
                         TextButton(
                           onPressed: () async {
                             final ok = await launchUrlString(
@@ -132,11 +212,17 @@ class _SignupViewState extends State<SignupView> {
                             );
                             if (!ok && mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Politika açılırken bir sorun oluştu.')),
+                                const SnackBar(
+                                  content: Text(
+                                    'Politika açılırken bir sorun oluştu.',
+                                  ),
+                                ),
                               );
                             }
                           },
-                          child: const Text('KVKK ve Gizlilik Politikasını oku'),
+                          child: const Text(
+                            'KVKK ve Gizlilik Politikasını oku',
+                          ),
                         ),
                       ],
                     ),
@@ -146,15 +232,40 @@ class _SignupViewState extends State<SignupView> {
                     onPressed: viewModel.isBusy
                         ? null
                         : () async {
+                            final strong2 = RegExp(r'^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$');
+                            if (!strong2.hasMatch(_password.text)) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Şifre en az 8 hane, 1 büyük harf ve 1 özel karakter içermeli.'),
+                                ),
+                              );
+                              return;
+                            }
+                            if (_password.text != _passwordConfirm.text) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Girilen şifreler uyuşmuyor.'),
+                                ),
+                              );
+                              return;
+                            }
                             if (!_acceptKvkk) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Devam etmek için KVKK ve Gizlilik onaylarını kabul etmelisiniz.')),
+                                const SnackBar(
+                                  content: Text(
+                                    'Devam etmek için KVKK ve Gizlilik onaylarını kabul etmelisiniz.',
+                                  ),
+                                ),
                               );
                               return;
                             }
                             if (!_acceptHealth) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Devam etmek için sağlık verisi açık rızasını vermelisiniz.')),
+                                const SnackBar(
+                                  content: Text(
+                                    'Devam etmek için sağlık verisi açık rızasını vermelisiniz.',
+                                  ),
+                                ),
                               );
                               return;
                             }
@@ -174,17 +285,23 @@ class _SignupViewState extends State<SignupView> {
                             if (!mounted) return;
                             if (err == null) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Kayıt başarılı.')),
+                                const SnackBar(
+                                  content: Text('Kayıt başarılı.'),
+                                ),
                               );
                               Navigator.pop(context);
                             } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(err)),
-                              );
+                              ScaffoldMessenger.of(
+                                context,
+                              ).showSnackBar(SnackBar(content: Text(err)));
                             }
                           },
                     child: viewModel.isBusy
-                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
                         : const Text('Kayıt Ol'),
                   ),
                 ],
