@@ -58,9 +58,9 @@ class SportView extends StackedView<SportViewModel> {
           children: [
             Text(
               'Günlük Hedefler',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
             Row(
@@ -126,15 +126,12 @@ class SportView extends StackedView<SportViewModel> {
           backgroundColor: color.withOpacity(0.2),
         ),
         const SizedBox(height: 12),
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
+        Text(title, style: Theme.of(context).textTheme.titleMedium),
         Text(
           '$current / $goal',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppTheme.textSecondary,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary),
         ),
       ],
     );
@@ -199,10 +196,7 @@ class SportView extends StackedView<SportViewModel> {
             const SizedBox(height: 8),
             Text(
               title,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(color: color, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -210,15 +204,18 @@ class SportView extends StackedView<SportViewModel> {
     );
   }
 
-  Widget _buildActivitiesSection(BuildContext context, SportViewModel viewModel) {
+  Widget _buildActivitiesSection(
+    BuildContext context,
+    SportViewModel viewModel,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Son Aktiviteler',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         if (viewModel.activities.isEmpty)
@@ -235,20 +232,16 @@ class SportView extends StackedView<SportViewModel> {
                   const SizedBox(height: 16),
                   Text(
                     'Henüz aktivite eklenmemiş',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
                   ),
                 ],
               ),
             ),
           )
         else
-          ...viewModel.activities.map((activity) => _buildActivityCard(
-                context,
-                activity,
-              )),
+          ...viewModel.activities.map(
+            (activity) => _buildActivityCard(context, activity),
+          ),
       ],
     );
   }
@@ -263,10 +256,7 @@ class SportView extends StackedView<SportViewModel> {
             color: AppTheme.primaryColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Icon(
-            Icons.fitness_center,
-            color: AppTheme.primaryColor,
-          ),
+          child: const Icon(Icons.fitness_center, color: AppTheme.primaryColor),
         ),
         title: Text(activity.name),
         subtitle: Text(
@@ -283,7 +273,7 @@ class SportView extends StackedView<SportViewModel> {
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
-    
+
     if (difference.inDays == 0) {
       return 'Bugün';
     } else if (difference.inDays == 1) {

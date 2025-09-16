@@ -1,15 +1,10 @@
-import 'package:flutter_native_timezone/flutter_native_timezone.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tzdata;
 
 class TimezoneService {
-  TimezoneService._();
-
   static Future<String> getLocalTimezone() async {
-    try {
-      return await FlutterNativeTimezone.getLocalTimezone();
-    } catch (_) {
-      return 'UTC';
-    }
+    tzdata.initializeTimeZones();
+    final location = tz.local;
+    return location.name;
   }
 }
-
-

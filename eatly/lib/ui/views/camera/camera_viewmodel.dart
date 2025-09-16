@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
@@ -15,6 +16,7 @@ import '../../../app/app.dart';
 import '../../../core/services/vision_service.dart';
 import '../../../core/models/vision_analysis.dart';
 import '../../../core/models/vision_models.dart' as vr;
+import '../../../core/services/fatsecret_service.dart';
 import '../../../core/services/photo_service.dart';
 import '../../../core/services/powersync_service.dart';
 import '../../../core/theme/app_theme.dart';
@@ -111,16 +113,19 @@ class CameraViewModel extends BaseViewModel {
     );
     
     try {
+      // Emülatörde ImageReader buffer uyarılarını azaltmak için önizlemeyi duraklat
+      await _controller?.pausePreview();
       final Uint8List rawBytes = await imageXFile.readAsBytes();
       _printBytesSize(rawBytes, 'Raw image');
       final Uint8List bytes = await _compressMobile(rawBytes);
       _printBytesSize(bytes, 'Compressed image');
       
-      final vision = VisionService();
-      final VisionAnalysis analysis = await vision.analyzeImageBytes(bytes);
-      
+      // Geçici: Sadece FatSecret kullan
+      final fat = FatSecretService();
+      final Map<String, dynamic> fs = await fat.recognizeImage(imageBytes: bytes);
+
       _dialogService.completeDialog(DialogResponse());
-      await _showAnalysisResults(bytes, analysis.result, analysis.nutrition);
+      await _showFatSecretResults(bytes, fs);
     } on DioException catch (e) {
       _dialogService.completeDialog(DialogResponse());
       String errorMessage = 'Ağ Hatası: ';
@@ -144,6 +149,9 @@ class CameraViewModel extends BaseViewModel {
         duration: const Duration(seconds: 3),
       );
       debugPrint('Genel analiz hatası: $e');
+    } finally {
+      // Önizlemeyi devam ettir
+      await _controller?.resumePreview();
     }
   }
   
@@ -216,6 +224,58 @@ class CameraViewModel extends BaseViewModel {
     
     if (response?.confirmed == true) {
       await _savePhoto(imageBytes, result, nutrition);
+    }
+  }
+
+  Future<void> _showFatSecretResults(
+    Uint8List imageBytes,
+    Map<String, dynamic> fs,
+  ) async {
+    final pretty = _formatFatSecretResults(fs);
+    final response = await _dialogService.showConfirmationDialog(
+      title: 'FatSecret Sonuçları',
+      description: pretty,
+      confirmationTitle: 'Kapat',
+      cancelTitle: 'İptal',
+    );
+    if (response != null) {}
+  }
+
+  String _formatFatSecretResults(Map<String, dynamic> fs) {
+    try {
+      // 1) Bilinen şemalar: recognized_foods, predictions, results
+      final buffer = StringBuffer();
+
+      List? tryList(dynamic v) => v is List ? v : null;
+      Map<String, dynamic>? tryMap(dynamic v) => v is Map<String, dynamic> ? v : null;
+
+      List? items = tryList(fs['recognized_foods']) ?? tryList(fs['predictions']) ?? tryList(fs['results']) ?? tryList(fs['food_response']);
+      if (items != null && items.isNotEmpty) {
+        buffer.writeln('Tespit edilen yiyecekler:');
+        for (final raw in items.take(5)) {
+          final m = tryMap(raw) ?? const {};
+          final food = tryMap(m['food']);
+          final eaten = tryMap(m['eaten']);
+          final name = (m['food_entry_name'] ?? eaten?['food_name_singular'] ?? food?['food_name'] ?? m['label'] ?? m['name'] ?? '').toString();
+          final conf = (m['confidence'] ?? m['score'] ?? food?['confidence'] ?? '').toString();
+          // Besin özetini göster
+          final nutrition = tryMap(m['total_nutritional_content']) ?? tryMap(eaten?['total_nutritional_content']);
+          buffer.writeln('• ${name.isEmpty ? 'Bilinmiyor' : name} ${conf.isNotEmpty ? '($conf)' : ''}');
+          if (nutrition != null) {
+            final cal = nutrition['calories'];
+            final prot = nutrition['protein'];
+            final carbs = nutrition['carbohydrate'] ?? nutrition['carbs'];
+            final fat = nutrition['fat'];
+            buffer.writeln('  kcal: $cal, P: $prot, C: $carbs, F: $fat');
+          }
+        }
+        return buffer.toString();
+      }
+
+      // 2) Tanımadığımız şema: Ham JSON göster
+      return const JsonEncoder.withIndent('  ').convert(fs);
+    } catch (_) {
+      return 'Sonuçlar gösterilemiyor';
     }
   }
   
