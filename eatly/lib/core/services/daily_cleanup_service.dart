@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'powersync_service.dart';
 import 'photo_service.dart';
+import '../../app/app.locator.dart';
 
 class DailyCleanupService {
   DailyCleanupService._();
@@ -67,8 +68,9 @@ class DailyCleanupService {
         final String id = r['id'] as String;
         final String storagePath = r['storage_path'] as String;
         try {
+          final photoService = locator<PhotoService>();
           await Supabase.instance.client.storage
-              .from(PhotoService.bucket)
+              .from(photoService.bucket)
               .remove([storagePath]);
         } catch (_) {}
         try {

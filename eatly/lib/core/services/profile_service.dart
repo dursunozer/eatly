@@ -6,7 +6,11 @@ class ProfileService {
   static final _client = Supabase.instance.client;
 
   static Future<Map<String, dynamic>?> fetchProfile(String uid) async {
-    final res = await _client.from('profiles').select().eq('id', uid).maybeSingle();
+    final res = await _client
+        .from('profiles')
+        .select()
+        .eq('id', uid)
+        .maybeSingle();
     return (res is Map<String, dynamic>) ? res : null;
   }
 
@@ -22,10 +26,12 @@ class ProfileService {
     double? hipCm,
     String? timezone,
   }) async {
-    final sessionUid = _client.auth.currentUser?.id ?? _client.auth.currentSession?.user.id;
+    final sessionUid =
+        _client.auth.currentUser?.id ?? _client.auth.currentSession?.user.id;
     if (sessionUid == null) {
-      // RLS nedeniyle anonim istekle INSERT/UPSERT yapamayız; önce auth gerekir
-      throw StateError('Authenticated session is required before upserting profile.');
+      throw StateError(
+        'Authenticated session is required before upserting profile.',
+      );
     }
     final data = <String, dynamic>{
       'id': sessionUid,
@@ -40,8 +46,6 @@ class ProfileService {
       if (timezone != null) 'timezone': timezone,
       'updated_at': DateTime.now().toIso8601String(),
     };
-    // İlk kullanıcı oluşturma anında auth.users satırı henüz görünür olmayabilir
-    // (özellikle yeni projelerde). FK 23503 hatasını kısa bir süre toleransla tekrar dene.
     PostgrestException? lastFkErr;
     for (int attempt = 0; attempt < 6; attempt++) {
       try {
@@ -49,7 +53,8 @@ class ProfileService {
         lastFkErr = null;
         break;
       } on PostgrestException catch (e) {
-        if (e.code == '23503' || (e.message ?? '').toLowerCase().contains('foreign key')) {
+        if (e.code == '23503' ||
+            (e.message ?? '').toLowerCase().contains('foreign key')) {
           lastFkErr = e;
           await Future.delayed(const Duration(milliseconds: 300));
           continue;
@@ -67,10 +72,21 @@ class ProfileService {
     required String uid,
   }) async {
     final path = 'avatars/$uid/${DateTime.now().millisecondsSinceEpoch}.jpg';
-    await _client.storage.from('food_images').uploadBinary(path, bytes, fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true));
+    await _client.storage
+        .from('food_images')
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: const FileOptions(
+            contentType: 'image/jpeg',
+            upsert: true,
+          ),
+        );
     String url;
     try {
-      url = await _client.storage.from('food_images').createSignedUrl(path, 3600);
+      url = await _client.storage
+          .from('food_images')
+          .createSignedUrl(path, 3600);
     } catch (_) {
       url = _client.storage.from('food_images').getPublicUrl(path);
     }

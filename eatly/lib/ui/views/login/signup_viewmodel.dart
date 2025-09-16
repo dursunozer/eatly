@@ -2,9 +2,11 @@ import 'package:stacked/stacked.dart';
 import '../../../core/services/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/config/policy_config.dart';
+import '../../../app/app.locator.dart';
 // Profil oluşturmayı giriş sonrasına bırakıyoruz; burada kullanmıyoruz
 
 class SignupViewModel extends BaseViewModel {
+  final _authService = locator<AuthService>();
   Future<String?> signUpExtended({
     required String email,
     required String password,
@@ -26,7 +28,7 @@ class SignupViewModel extends BaseViewModel {
 
       // Kullanıcıyı oluştur (e‑posta doğrulaması gerektiren projelerde
       // burada oturum açmaya çalışmayacağız)
-      final String? uid = await AuthService.signUpWithPassword(
+      final String? uid = await _authService.signUpWithPassword(
         email: email,
         password: password,
         emailRedirectTo: null,

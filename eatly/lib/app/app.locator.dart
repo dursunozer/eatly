@@ -7,8 +7,19 @@
 
 // ignore_for_file: public_member_api_docs, implementation_imports, depend_on_referenced_packages
 
-import 'package:stacked_services/src/navigation/navigation_service.dart';
+import 'package:stacked_services/stacked_services.dart';
 import 'package:stacked_shared/stacked_shared.dart';
+
+import '../core/services/auth_service.dart';
+import '../core/services/user_service.dart';
+import '../core/services/vision_service.dart';
+import '../core/services/photo_service.dart';
+import '../core/services/consent_service.dart';
+import '../core/services/supabase_service.dart';
+import '../core/services/nutrition_service.dart';
+import '../core/services/meal_service.dart';
+import '../core/services/api_service.dart';
+import '../core/services/huggingface_service.dart';
 
 final locator = StackedLocator.instance;
 
@@ -23,5 +34,21 @@ Future<void> setupLocator({
   );
 
   // Register dependencies
+  // Stacked Services
   locator.registerLazySingleton(() => NavigationService());
+  locator.registerLazySingleton(() => DialogService());
+  locator.registerLazySingleton(() => BottomSheetService());
+  locator.registerLazySingleton(() => SnackbarService());
+  
+  // App Services
+  locator.registerLazySingleton(() => AuthService());
+  locator.registerLazySingleton(() => UserService());
+  locator.registerLazySingleton(() => VisionService());
+  locator.registerLazySingleton(() => PhotoService());
+  locator.registerLazySingleton(() => ConsentService());
+  locator.registerLazySingleton(() => SupabaseService());
+  locator.registerLazySingleton(() => NutritionService());
+  locator.registerLazySingleton(() => MealService());
+  locator.registerLazySingleton(() => ApiService());
+  locator.registerLazySingleton(() => HuggingFaceService());
 }

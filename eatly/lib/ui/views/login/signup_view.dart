@@ -96,9 +96,13 @@ class _SignupViewState extends State<SignupView> {
                       labelText: 'Şifre',
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                         ),
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
                       ),
                     ),
                     obscureText: _obscurePassword,
@@ -110,9 +114,14 @@ class _SignupViewState extends State<SignupView> {
                       labelText: 'Şifrenizi tekrar girin',
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePasswordConfirm ? Icons.visibility_off : Icons.visibility,
+                          _obscurePasswordConfirm
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                         ),
-                        onPressed: () => setState(() => _obscurePasswordConfirm = !_obscurePasswordConfirm),
+                        onPressed: () => setState(
+                          () => _obscurePasswordConfirm =
+                              !_obscurePasswordConfirm,
+                        ),
                       ),
                     ),
                     obscureText: _obscurePasswordConfirm,
@@ -232,11 +241,15 @@ class _SignupViewState extends State<SignupView> {
                     onPressed: viewModel.isBusy
                         ? null
                         : () async {
-                            final strong2 = RegExp(r'^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$');
+                            final strong2 = RegExp(
+                              r'^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$',
+                            );
                             if (!strong2.hasMatch(_password.text)) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Şifre en az 8 hane, 1 büyük harf ve 1 özel karakter içermeli.'),
+                                  content: Text(
+                                    'Şifre en az 8 hane, 1 büyük harf ve 1 özel karakter içermeli.',
+                                  ),
                                 ),
                               );
                               return;

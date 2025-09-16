@@ -1,12 +1,14 @@
+import 'package:eatly/ui/views/camera/camera_view.dart';
 import 'package:stacked/stacked.dart';
 import 'package:stacked_services/stacked_services.dart';
 import '../../../app/app.locator.dart';
-import '../camera/camera_screen.dart';
+import '../camera/camera_view.dart';
 import '../../views/login/consent_update_view.dart';
 import '../../../core/services/consent_service.dart';
 
 class MainViewModel extends BaseViewModel {
   final _nav = locator<NavigationService>();
+  final _consentService = locator<ConsentService>();
 
   int currentIndex = 0;
   int refreshTick = 0; // HomeView'i zorla yeniden oluşturmak için artan sayaç
@@ -17,7 +19,7 @@ class MainViewModel extends BaseViewModel {
   }
 
   Future<void> goToCamera() async {
-    final result = await _nav.navigateToView(const CameraScreen());
+    final result = await _nav.navigateToView(const CameraView());
     // Kamera sayfasından true dönerse ana sayfayı yenilemek için notifyListeners
     if (result == true) {
       refreshTick++;
@@ -27,7 +29,7 @@ class MainViewModel extends BaseViewModel {
 
   Future<void> ensurePolicyUpToDate() async {
     try {
-      final ok = await ConsentService.hasAcceptedCurrentPolicy();
+      final ok = await _consentService.hasAcceptedCurrentPolicy();
       if (!ok) {
         await _nav.navigateToView(const ConsentUpdateView());
       }

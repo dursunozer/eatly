@@ -1,44 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../core/models/food_item.dart';
-import '../../../core/services/photo_service.dart';
-import '../../../core/services/powersync_service.dart';
-import 'dart:io';
-import 'home_viewmodel.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
+import 'dart:io';
 
-class HomeView extends StatelessWidget {
+import '../../../core/theme/app_theme.dart';
+import 'home_viewmodel.dart';
+
+class HomeView extends StackedView<HomeViewModel> {
   const HomeView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ViewModelBuilder<HomeViewModel>.reactive(
-      viewModelBuilder: () => HomeViewModel(),
-      onViewModelReady: (m) => m.init(),
-      builder: (context, model, child) {
-        return Scaffold(
-          backgroundColor: AppTheme.backgroundColor,
-          //appBar: AppBar(title: const Text('Eatly')),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildWelcomeCard(model),
-                const SizedBox(height: 20),
-                _buildDailySummaryCard(context, model),
-                const SizedBox(height: 20),
-                _buildRecentMeals(model),
-              ],
-            ),
-          ),
-        );
-      },
+  Widget builder(BuildContext context, HomeViewModel viewModel, Widget? child) {
+    return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildWelcomeCard(viewModel),
+            const SizedBox(height: 20),
+            _buildDailySummaryCard(context, viewModel),
+            const SizedBox(height: 20),
+            _buildRecentMeals(viewModel),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildWelcomeCard(HomeViewModel model) {
+  Widget _buildWelcomeCard(HomeViewModel viewModel) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -53,7 +44,7 @@ class HomeView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            model.greeting,
+            viewModel.greeting,
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -62,7 +53,7 @@ class HomeView extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            model.displayName ?? model.formattedDate,
+            viewModel.displayName ?? viewModel.formattedDate,
             style: const TextStyle(fontSize: 16, color: Colors.white),
           ),
         ],
@@ -70,8 +61,8 @@ class HomeView extends StatelessWidget {
     );
   }
 
-  Widget _buildDailySummaryCard(BuildContext context, HomeViewModel model) {
-    final s = model.todaySummary;
+  Widget _buildDailySummaryCard(BuildContext context, HomeViewModel viewModel) {
+    final s = viewModel.todaySummary;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -176,13 +167,13 @@ class HomeView extends StatelessWidget {
     );
   }
 
-  Widget _buildRecentMeals(HomeViewModel model) {
+  Widget _buildRecentMeals(HomeViewModel viewModel) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
+          children: [
             Text(
               'Son Öğünler',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
@@ -191,7 +182,7 @@ class HomeView extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         FutureBuilder<List<String>>(
-          future: _loadCombinedPhotos(),
+          future: viewModel.loadCombinedPhotos(),
           builder: (context, snapshot) {
             final photos = snapshot.data ?? <String>[];
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -253,60 +244,11 @@ class HomeView extends StatelessWidget {
     );
   }
 
-  Future<List<String>> _loadCombinedPhotos() async {
-    // 1) Offline kuyruktan bugünkü senkronlanmamış dosyaları al (en yeni üste)
-    final now = DateTime.now();
-    final start = DateTime(now.year, now.month, now.day);
-    List<Map<String, Object?>> local = <Map<String, Object?>>[];
-    try {
-      final rows = await AppPowerSync.instance.db.getAll(
-        'select local_path, taken_at from local_photos where is_synced = 0 and taken_at >= ? order by taken_at desc',
-        [start.toIso8601String()],
-      );
-      local = rows
-          .map(
-            (r) => {
-              'local_path': r['local_path'] as String,
-              'taken_at': r['taken_at'] as String,
-            },
-          )
-          .toList();
-    } catch (_) {
-      // Web veya DB hazır değilse local list boş kalsın
-    }
+  @override
+  HomeViewModel viewModelBuilder(BuildContext context) => HomeViewModel();
 
-    // 2) Supabase'ten bugünkü senkronlanmış URL'ler
-    final remote = await PhotoService.fetchTodayPhotoUrls();
-
-    // 3) Birleştir: önce local (file://), sonra remote
-    final combined = <String>[
-      ...local.map((e) => 'file://${e['local_path']}'),
-      ...remote,
-    ];
-    return combined;
-  }
-
-  Widget _buildFoodItem(FoodItem food) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            color: Colors.grey.shade200,
-          ),
-          child: const Icon(Icons.fastfood, color: AppTheme.primaryColor),
-        ),
-        title: Text(
-          food.name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(
-          '${food.portion.toInt()}g • ${food.nutritionInfo.calories.toInt()} kcal',
-        ),
-      ),
-    );
+  @override
+  void onViewModelReady(HomeViewModel viewModel) {
+    viewModel.init();
   }
 }

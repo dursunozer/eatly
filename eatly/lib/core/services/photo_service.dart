@@ -3,12 +3,11 @@ import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PhotoService {
-  PhotoService._();
-  static final SupabaseClient _client = Supabase.instance.client;
+  final SupabaseClient _client = Supabase.instance.client;
   static const String _bucket = 'food_images';
-  static String get bucket => _bucket;
+  String get bucket => _bucket;
 
-  static Future<String> saveUserMealPhoto({
+  Future<String> saveUserMealPhoto({
     required Uint8List bytes,
     DateTime? takenAt,
     List<Map<String, dynamic>>? labels,
@@ -50,7 +49,7 @@ class PhotoService {
     return path;
   }
 
-  static Future<List<String>> fetchTodayPhotoUrls() async {
+  Future<List<String>> fetchTodayPhotoUrls() async {
     final String? uid = _client.auth.currentUser?.id;
     if (uid == null) return <String>[];
     // Sunucu tarafında kullanıcı saat dilimine göre filtreleyen view kullan
@@ -77,7 +76,7 @@ class PhotoService {
     return urls;
   }
 
-  static Future<bool> existsUserPhoto({required String storagePath}) async {
+  Future<bool> existsUserPhoto({required String storagePath}) async {
     final String? uid = _client.auth.currentUser?.id;
     if (uid == null) return false;
     final List<dynamic> res = await _client

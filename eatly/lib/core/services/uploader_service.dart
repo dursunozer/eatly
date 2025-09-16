@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:eatly/core/services/powersync_service.dart';
-
+import '../../app/app.locator.dart';
 import 'photo_service.dart';
 
 class UploaderService {
@@ -36,7 +36,8 @@ class UploaderService {
           continue;
         }
         final bytes = await file.readAsBytes();
-        final remotePath = await PhotoService.saveUserMealPhoto(bytes: bytes);
+        final photoService = locator<PhotoService>();
+        final remotePath = await photoService.saveUserMealPhoto(bytes: bytes);
         await db.execute(
           'update local_photos set is_synced = 1, remote_path = ? where id = ?',
           [remotePath, id],

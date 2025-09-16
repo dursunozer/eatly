@@ -24,9 +24,9 @@ class MealPhotoService {
 
     // Yalnızca bugünün fotoğraflarını döndür, yeni-en-üstte olacak şekilde sırala
     final List<MealPhoto> todays = all
-        .where((p) => p.timestamp.isAfter(startOfDay))
+        .where((p) => p.createdAt.isAfter(startOfDay))
         .toList()
-      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return todays;
   }
 
@@ -37,7 +37,11 @@ class MealPhotoService {
         ? <dynamic>[]
         : (jsonDecode(raw) as List<dynamic>);
 
-    final MealPhoto photo = MealPhoto(imageBytes: bytes, timestamp: DateTime.now());
+    final MealPhoto photo = MealPhoto(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      imageBytes: bytes,
+      createdAt: DateTime.now(),
+    );
     list.add(photo.toJson());
 
     await prefs.setString(_prefsKey, jsonEncode(list));

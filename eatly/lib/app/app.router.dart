@@ -1,12 +1,4 @@
-// dart format width=80
-// GENERATED CODE - DO NOT MODIFY BY HAND
-
-// **************************************************************************
-// StackedNavigatorGenerator
-// **************************************************************************
-
-// ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:eatly/ui/views/camera/camera_screen.dart' as _i4;
+import 'package:eatly/ui/views/camera/camera_view.dart' as _i4;
 import 'package:eatly/ui/views/login/login_view.dart' as _i2;
 import 'package:eatly/ui/views/main/main_view.dart' as _i3;
 import 'package:eatly/ui/views/nutrition/nutrition_view.dart' as _i5;
@@ -31,7 +23,7 @@ class StackedRouter extends _i1.RouterBase {
   final _routes = <_i1.RouteDef>[
     _i1.RouteDef(Routes.loginView, page: _i2.LoginView),
     _i1.RouteDef(Routes.mainView, page: _i3.MainView),
-    _i1.RouteDef(Routes.cameraScreen, page: _i4.CameraScreen),
+    _i1.RouteDef(Routes.cameraScreen, page: _i4.CameraView),
     _i1.RouteDef(Routes.nutritionView, page: _i5.NutritionView),
   ];
 
@@ -54,12 +46,12 @@ class StackedRouter extends _i1.RouterBase {
         settings: data,
       );
     },
-    _i4.CameraScreen: (data) {
+    _i4.CameraView: (data) {
       final args = data.getArgs<CameraScreenArguments>(
         orElse: () => const CameraScreenArguments(),
       );
       return _i6.MaterialPageRoute<dynamic>(
-        builder: (context) => _i4.CameraScreen(key: args.key),
+        builder: (context) => _i4.CameraView(key: args.key),
         settings: data,
       );
     },

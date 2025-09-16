@@ -117,4 +117,4 @@ flutter:
 
 
 
-# AIzaSyBPwumSTFWb_DMlXFH0PqC-SyHogdic71E        //Google Vision Api Key
+# Google Vision API anahtarı kaldırıldı; HF backend kullanılmaktadır.

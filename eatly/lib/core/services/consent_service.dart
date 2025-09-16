@@ -2,10 +2,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/policy_config.dart';
 
 class ConsentService {
-  ConsentService._();
-  static final SupabaseClient _client = Supabase.instance.client;
+  final SupabaseClient _client = Supabase.instance.client;
 
-  static Future<String?> _fetchUserPolicyVersion() async {
+  Future<String?> _fetchUserPolicyVersion() async {
     final String? uid = _client.auth.currentUser?.id;
     if (uid == null) return null;
     final res = await _client
@@ -19,7 +18,7 @@ class ConsentService {
     return null;
   }
 
-  static Future<bool> hasAcceptedCurrentPolicy() async {
+  Future<bool> hasAcceptedCurrentPolicy() async {
     String? current = await _fetchUserPolicyVersion();
     if (current == null) {
       // Fallback: auth metadata'dan ilk onayı çekip veritabanına upsert etmeyi dene
@@ -43,7 +42,7 @@ class ConsentService {
     return current == PolicyConfig.policyVersion;
   }
 
-  static Future<void> saveConsent({
+  Future<void> saveConsent({
     required bool kvkkAccepted,
     required bool healthAccepted,
   }) async {

@@ -3,13 +3,14 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import '../utils/env.dart';
 import '../models/vision_models.dart' as vr;
+import '../models/vision_analysis.dart';
 
 class VisionService {
   final http.Client _client;
 
   VisionService({http.Client? client}) : _client = client ?? http.Client();
 
-  Future<vr.VisionResult> analyzeImageBytes(Uint8List imageBytes) async {
+  Future<VisionAnalysis> analyzeImageBytes(Uint8List imageBytes) async {
     if (EnvConfig.visionProxyEndpoint.isEmpty) {
       throw Exception('Vision proxy endpoint tanımlı değil (EnvConfig).');
     }
@@ -29,8 +30,7 @@ class VisionService {
       );
     }
 
-    final Map<String, dynamic> json =
-        jsonDecode(response.body) as Map<String, dynamic>;
+    final Map<String, dynamic> json = jsonDecode(response.body) as Map<String, dynamic>;
     final List<vr.VisionLabel> labels = ((json['labels'] as List?) ?? [])
         .map(
           (e) => vr.VisionLabel(
@@ -57,6 +57,7 @@ class VisionService {
         )
         .toList();
 
-    return vr.VisionResult(labels: labels, objects: objects);
+    final Map<String, dynamic>? nutrition = json['nutrition'] as Map<String, dynamic>?;
+    return VisionAnalysis(result: vr.VisionResult(labels: labels, objects: objects), nutrition: nutrition);
   }
 }

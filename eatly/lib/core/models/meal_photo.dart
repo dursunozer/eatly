@@ -3,22 +3,75 @@ import 'dart:typed_data';
 
 /// Gün içinde çekilen öğün fotoğrafını temsil eder
 class MealPhoto {
-  final Uint8List imageBytes;
-  final DateTime timestamp;
+  final String id;
+  final Uint8List? imageBytes;
+  final String? imagePath;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
+  final List<Map<String, dynamic>> detectedItems;
+  final Map<String, dynamic>? nutritionInfo;
+  final String? notes;
+  final String? userId;
 
-  MealPhoto({required this.imageBytes, required this.timestamp});
+  MealPhoto({
+    required this.id,
+    this.imageBytes,
+    this.imagePath,
+    required this.createdAt,
+    this.updatedAt,
+    this.detectedItems = const [],
+    this.nutritionInfo,
+    this.notes,
+    this.userId,
+  });
 
   Map<String, dynamic> toJson() => {
-        'b64': base64Encode(imageBytes),
-        'ts': timestamp.millisecondsSinceEpoch,
+        'id': id,
+        if (imageBytes != null) 'b64': base64Encode(imageBytes!),
+        'image_path': imagePath,
+        'created_at': createdAt.toIso8601String(),
+        'updated_at': updatedAt?.toIso8601String(),
+        'detected_items': detectedItems,
+        'nutrition_info': nutritionInfo,
+        'notes': notes,
+        'user_id': userId,
       };
 
-  static MealPhoto fromJson(Map<String, dynamic> json) {
-    final String b64 = json['b64'] as String;
-    final int ts = json['ts'] as int;
+  factory MealPhoto.fromJson(Map<String, dynamic> json) {
     return MealPhoto(
-      imageBytes: base64Decode(b64),
-      timestamp: DateTime.fromMillisecondsSinceEpoch(ts),
+      id: json['id'],
+      imageBytes: json['b64'] != null ? base64Decode(json['b64']) : null,
+      imagePath: json['image_path'],
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
+      detectedItems: List<Map<String, dynamic>>.from(json['detected_items'] ?? []),
+      nutritionInfo: json['nutrition_info'],
+      notes: json['notes'],
+      userId: json['user_id'],
+    );
+  }
+
+  MealPhoto copyWith({
+    String? id,
+    Uint8List? imageBytes,
+    String? imagePath,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    List<Map<String, dynamic>>? detectedItems,
+    Map<String, dynamic>? nutritionInfo,
+    String? notes,
+    String? userId,
+  }) {
+    return MealPhoto(
+      id: id ?? this.id,
+      imageBytes: imageBytes ?? this.imageBytes,
+      imagePath: imagePath ?? this.imagePath,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      detectedItems: detectedItems ?? this.detectedItems,
+      nutritionInfo: nutritionInfo ?? this.nutritionInfo,
+      notes: notes ?? this.notes,
+      userId: userId ?? this.userId,
     );
   }
 }

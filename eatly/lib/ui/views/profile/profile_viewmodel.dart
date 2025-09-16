@@ -5,8 +5,10 @@ import '../../../core/theme/app_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/profile_service.dart';
+import '../../../app/app.locator.dart';
 
 class ProfileViewModel extends BaseViewModel {
+  final _authService = locator<AuthService>();
   String? name;
   int? age;
   double? weight;
@@ -20,7 +22,7 @@ class ProfileViewModel extends BaseViewModel {
   Future<void> init() async {
     setBusy(true);
     try {
-      final uid = AuthService.currentUserId;
+      final uid = _authService.currentUserId;
       if (uid == null) return;
       Map<String, dynamic>? profile = await ProfileService.fetchProfile(
         uid,
@@ -92,7 +94,7 @@ class ProfileViewModel extends BaseViewModel {
     double? newWaistCm,
     double? newHipCm,
   }) async {
-    final uid = AuthService.currentUserId;
+    final uid = _authService.currentUserId;
     if (uid == null) return;
     await ProfileService.upsertProfile(
       uid: uid,
@@ -108,7 +110,7 @@ class ProfileViewModel extends BaseViewModel {
   }
 
   Future<void> uploadAvatar(Uint8List bytes) async {
-    final uid = AuthService.currentUserId;
+    final uid = _authService.currentUserId;
     if (uid == null) return;
     final url = await ProfileService.uploadAvatar(bytes: bytes, uid: uid);
     if (url != null) {

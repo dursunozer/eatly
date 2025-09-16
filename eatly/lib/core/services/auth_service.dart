@@ -1,13 +1,15 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthService {
-  AuthService._();
+  final SupabaseClient _client = Supabase.instance.client;
 
-  static final SupabaseClient _client = Supabase.instance.client;
+  String? get currentUserId => _client.auth.currentUser?.id;
+  
+  User? get currentUser => _client.auth.currentUser;
+  
+  bool get isLoggedIn => currentUser != null;
 
-  static String? get currentUserId => _client.auth.currentUser?.id;
-
-  static Future<String?> signInWithPassword({
+  Future<String?> signInWithPassword({
     required String email,
     required String password,
   }) async {
@@ -18,7 +20,7 @@ class AuthService {
     return res.user?.id;
   }
 
-  static Future<String?> signUpWithPassword({
+  Future<String?> signUpWithPassword({
     required String email,
     required String password,
     String? emailRedirectTo,
@@ -33,13 +35,15 @@ class AuthService {
     return res.user?.id;
   }
 
-  static Future<void> sendPasswordResetEmail(String email) async {
+  Future<void> sendPasswordResetEmail(String email) async {
     await _client.auth.resetPasswordForEmail(email.trim());
   }
 
-  static Future<void> signOut() async {
+  Future<void> signOut() async {
     await _client.auth.signOut();
   }
+  
+  Stream<AuthState> get authStateStream => _client.auth.onAuthStateChange;
 }
 
 
