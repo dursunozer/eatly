@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -20,6 +21,7 @@ import '../../../core/services/fatsecret_service.dart';
 import '../../../core/services/photo_service.dart';
 import '../../../core/services/powersync_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/services/meal_photo_service.dart';
 
 class CameraViewModel extends BaseViewModel {
   final _navigationService = locator<NavigationService>();
@@ -27,6 +29,7 @@ class CameraViewModel extends BaseViewModel {
   final _bottomSheetService = locator<BottomSheetService>();
   final _dialogService = locator<DialogService>();
   final _photoService = locator<PhotoService>();
+  final MealPhotoService _mealPhotoService = MealPhotoService();
   
   final ImagePicker _imagePicker = ImagePicker();
   final dio = Dio();
@@ -106,53 +109,140 @@ class CameraViewModel extends BaseViewModel {
   }
   
   Future<void> _processImage(XFile imageXFile) async {
-    _dialogService.showDialog(
-      title: 'Fotoğraf analiz ediliyor...',
-      description: 'Besinler tespit ediliyor',
-      barrierDismissible: false,
-    );
-    
     try {
-      // Emülatörde ImageReader buffer uyarılarını azaltmak için önizlemeyi duraklat
-      await _controller?.pausePreview();
+      debugPrint('🔄 Fotoğraf işleniyor...');
       final Uint8List rawBytes = await imageXFile.readAsBytes();
       _printBytesSize(rawBytes, 'Raw image');
       final Uint8List bytes = await _compressMobile(rawBytes);
       _printBytesSize(bytes, 'Compressed image');
-      
-      // Geçici: Sadece FatSecret kullan
+
+      // 1) Fotoğrafı hemen "Son Öğünler" listesine ekle (analiz beklenmeden)
+      debugPrint('📱 Yerel listeye ekleniyor...');
+      final String tempId = await _mealPhotoService.addPhoto(bytes);
+      debugPrint('✅ Yerel listeye eklendi: $tempId');
+
+      // 2) Ana ekrana dön ve Home'ı yenile
+      debugPrint('🏠 Ana ekrana dönülüyor...');
+      _navigationService.back(result: {'newPhoto': true, 'photoId': tempId});
+
+      // 3) Arka planda: yerel kuyruğa ekle (UploaderService otomatik Supabase'e yükler)
+      debugPrint('💾 Yerel kuyruğa ekleniyor...');
+      await _enqueueLocalSave(bytes);
+
+      // 4) Arka planda: analiz et ve sonucu güncelle
+      debugPrint('🔍 Analiz başlatılıyor...');
+      unawaited(_performAnalysis(tempId, bytes));
+    } catch (e) {
+      debugPrint('❌ Fotoğraf işleme hatası: $e');
+      _snackbarService.showSnackbar(
+        message: 'Fotoğraf işlenemedi: $e',
+        duration: const Duration(seconds: 3),
+      );
+    }
+  }
+
+  // _uploadToSupabase metodu kaldırıldı - UploaderService kullanılıyor
+
+  Future<void> _performAnalysis(String tempId, Uint8List bytes) async {
+    try {
       final fat = FatSecretService();
       final Map<String, dynamic> fs = await fat.recognizeImage(imageBytes: bytes);
-
-      _dialogService.completeDialog(DialogResponse());
-      await _showFatSecretResults(bytes, fs);
-    } on DioException catch (e) {
-      _dialogService.completeDialog(DialogResponse());
-      String errorMessage = 'Ağ Hatası: ';
-      if (e.response != null) {
-        errorMessage += '${e.response?.statusCode} - ${e.response?.statusMessage}';
-        if (e.response?.data != null) {
-          errorMessage += '\nDetay: ${e.response?.data}';
-        }
-      } else {
-        errorMessage += e.message ?? 'Bilinmeyen bir Dio hatası.';
+      final List<Map<String, dynamic>> detected = _extractDetectedItemsFromFatSecret(fs);
+      await _mealPhotoService.updateDetectedItems(id: tempId, detectedItems: detected);
+      debugPrint('✅ Analiz tamamlandı: ${detected.length} öğe');
+      
+      // Analiz tamamlandığında bildirim göster
+      if (detected.isNotEmpty) {
+        final names = detected.take(2).map((e) => e['name']).join(', ');
+        _snackbarService.showSnackbar(
+          message: '$names ve ${detected.length > 2 ? '${detected.length - 2} besin daha' : ''} tespit edildi!',
+          duration: const Duration(seconds: 3),
+        );
       }
-      _snackbarService.showSnackbar(
-        message: 'Analiz hatası: $errorMessage',
-        duration: const Duration(seconds: 3),
-      );
-      debugPrint('Analiz hatası (Dio): $errorMessage');
     } catch (e) {
-      _dialogService.completeDialog(DialogResponse());
+      debugPrint('❌ Analiz hatası: $e');
       _snackbarService.showSnackbar(
-        message: 'Genel analiz hatası: $e',
+        message: 'Analiz tamamlanamadı: $e',
         duration: const Duration(seconds: 3),
       );
-      debugPrint('Genel analiz hatası: $e');
-    } finally {
-      // Önizlemeyi devam ettir
-      await _controller?.resumePreview();
     }
+  }
+
+  Future<void> _enqueueLocalSave(Uint8List imageBytes) async {
+    try {
+      final id = DateTime.now().millisecondsSinceEpoch.toString();
+      final dir = await getApplicationDocumentsDirectory();
+      final String filePath = '${dir.path}/meal_$id.jpg';
+      final file = File(filePath);
+      await file.writeAsBytes(imageBytes, flush: true);
+      printFileSize(file, 'Saved local file');
+
+      await AppPowerSync.instance.db.execute(
+        'insert into local_photos (id, local_path, taken_at, is_synced) values (?, ?, ?, ?)',
+        [id, filePath, DateTime.now().toIso8601String(), 0],
+      );
+    } catch (_) {
+      // Web veya destek yoksa sessizce geç
+    }
+  }
+
+  List<Map<String, dynamic>> _extractDetectedItemsFromFatSecret(Map<String, dynamic> fs) {
+    List<Map<String, dynamic>> out = [];
+    List? tryList(dynamic v) => v is List ? v : null;
+    Map<String, dynamic>? tryMap(dynamic v) => v is Map<String, dynamic> ? v : null;
+
+    final List? items = tryList(fs['recognized_foods']) ??
+        tryList(fs['predictions']) ??
+        tryList(fs['results']) ??
+        tryList(fs['food_response']);
+    if (items != null) {
+      for (final raw in items) {
+        final m = tryMap(raw) ?? const {};
+        final food = tryMap(m['food']);
+        final eaten = tryMap(m['eaten']);
+        final String name = (m['food_entry_name'] ?? eaten?['food_name_singular'] ?? food?['food_name'] ?? m['label'] ?? m['name'] ?? '').toString();
+        final dynamic confRaw = (m['confidence'] ?? m['score'] ?? food?['confidence']);
+        final double conf = confRaw is num ? confRaw.toDouble() : 0.0;
+        
+        // Besin değerlerini çıkar
+        final nutritionData = tryMap(m['total_nutritional_content']) ?? 
+                             tryMap(eaten?['total_nutritional_content']) ??
+                             tryMap(food?['nutrition']);
+        
+        Map<String, dynamic>? nutrition;
+        if (nutritionData != null) {
+          nutrition = {
+            'calories': _parseNumber(nutritionData['calories']),
+            'protein': _parseNumber(nutritionData['protein']),
+            'carbohydrate': _parseNumber(nutritionData['carbohydrate'] ?? nutritionData['carbs']),
+            'fat': _parseNumber(nutritionData['fat']),
+          };
+        }
+        
+        if (name.isNotEmpty) {
+          out.add({
+            'name': name, 
+            'confidence': conf,
+            if (nutrition != null) 'nutrition': nutrition,
+          });
+        }
+      }
+      out.sort((a, b) => (b['confidence'] as double).compareTo(a['confidence'] as double));
+    }
+    return out;
+  }
+  
+  double _parseNumber(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      // "45.2g" gibi string'lerdeki sayıları çıkar
+      final match = RegExp(r'(\d+\.?\d*)').firstMatch(value);
+      if (match != null) {
+        return double.tryParse(match.group(1) ?? '0') ?? 0.0;
+      }
+    }
+    return 0.0;
   }
   
   Future<Uint8List> _compressMobile(Uint8List input) async {
@@ -209,37 +299,7 @@ class CameraViewModel extends BaseViewModel {
     } catch (_) {}
   }
   
-  Future<void> _showAnalysisResults(
-    Uint8List imageBytes,
-    vr.VisionResult result,
-    Map<String, dynamic>? nutrition,
-  ) async {
-    // Basit dialog ile kullanıcıya sonuçları göster
-    final response = await _dialogService.showConfirmationDialog(
-      title: 'Tespit Edilen Besinler',
-      description: _formatAnalysisResults(result, nutrition),
-      confirmationTitle: 'Kaydet',
-      cancelTitle: 'İptal',
-    );
-    
-    if (response?.confirmed == true) {
-      await _savePhoto(imageBytes, result, nutrition);
-    }
-  }
-
-  Future<void> _showFatSecretResults(
-    Uint8List imageBytes,
-    Map<String, dynamic> fs,
-  ) async {
-    final pretty = _formatFatSecretResults(fs);
-    final response = await _dialogService.showConfirmationDialog(
-      title: 'FatSecret Sonuçları',
-      description: pretty,
-      confirmationTitle: 'Kapat',
-      cancelTitle: 'İptal',
-    );
-    if (response != null) {}
-  }
+  // Artık kullanılmayan dialog metotları kaldırıldı
 
   String _formatFatSecretResults(Map<String, dynamic> fs) {
     try {

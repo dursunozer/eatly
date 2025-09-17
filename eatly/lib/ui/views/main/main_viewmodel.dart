@@ -11,7 +11,6 @@ class MainViewModel extends BaseViewModel {
   final _consentService = locator<ConsentService>();
 
   int currentIndex = 0;
-  int refreshTick = 0; // HomeView'i zorla yeniden oluşturmak için artan sayaç
 
   void onTabSelected(int index) {
     currentIndex = index;
@@ -20,9 +19,10 @@ class MainViewModel extends BaseViewModel {
 
   Future<void> goToCamera() async {
     final result = await _nav.navigateToView(const CameraView());
-    // Kamera sayfasından true dönerse ana sayfayı yenilemek için notifyListeners
-    if (result == true) {
-      refreshTick++;
+    // Kamera sayfasından sonuç dönerse ana sayfaya dön
+    if (result != null) {
+      // Giriş (Home) sekmesine dön
+      currentIndex = 0;
       notifyListeners();
     }
   }

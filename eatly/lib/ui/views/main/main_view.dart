@@ -21,10 +21,7 @@ class MainView extends StatelessWidget {
           model.ensurePolicyUpToDate();
         });
         final screens = [
-          KeyedSubtree(
-            key: ValueKey('home-${model.refreshTick}'),
-            child: const HomeView(),
-          ),
+          const HomeView(),
           const NutritionView(),
           const SuggestionView(),
           const SportView(),

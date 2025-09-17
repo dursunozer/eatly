@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:stacked/stacked.dart';
 import 'package:intl/intl.dart';
 import '../../../core/models/daily_summary.dart';
@@ -5,17 +7,26 @@ import '../../../core/services/profile_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/photo_service.dart';
 import '../../../core/services/powersync_service.dart';
+import '../../../core/services/meal_photo_service.dart';
+import '../../../core/models/meal_photo.dart';
 import '../../../app/app.locator.dart';
 
 class HomeViewModel extends BaseViewModel {
   final _authService = locator<AuthService>();
   final _photoService = locator<PhotoService>();
+  final MealPhotoService _mealPhotoService = MealPhotoService();
   final DailySummary todaySummary = DailySummary(
     date: DateTime.now(),
     foods: [],
   );
 
   String? displayName;
+  Future<List<MealPhoto>>? _todayMealPhotosFuture;
+
+  Future<List<MealPhoto>> get todayMealPhotosFuture {
+    _todayMealPhotosFuture ??= loadTodayMealPhotos();
+    return _todayMealPhotosFuture!;
+  }
 
   String get formattedDate =>
       DateFormat('dd MMMM yyyy', 'tr_TR').format(DateTime.now());
@@ -39,6 +50,24 @@ class HomeViewModel extends BaseViewModel {
       // ignore
     }
     notifyListeners();
+  }
+  
+  // Manuel yenileme - Future cache'ini temizler
+  void refreshPhotos() {
+    _todayMealPhotosFuture = null;
+    notifyListeners();
+  }
+
+  // Öğün fotoğrafını sil (sadece yerel listeden)
+  Future<void> deleteMealPhoto(String id) async {
+    try {
+      await _mealPhotoService.deleteMealPhoto(id);
+      // Cache'i temizle ve UI'yi yenile
+      _todayMealPhotosFuture = null;
+      notifyListeners();
+    } catch (e) {
+      // Hata durumunda sessizce geç
+    }
   }
   
   Future<List<String>> getTodayPhotoUrls() async {
@@ -80,5 +109,14 @@ class HomeViewModel extends BaseViewModel {
       ...remote,
     ];
     return combined;
+  }
+
+  // Yeni: Bugünkü yerel öğün fotoğraflarını, analiz durumlarıyla getir
+  Future<List<MealPhoto>> loadTodayMealPhotos() async {
+    try {
+      return await _mealPhotoService.loadTodayPhotos();
+    } catch (e) {
+      return <MealPhoto>[];
+    }
   }
 }

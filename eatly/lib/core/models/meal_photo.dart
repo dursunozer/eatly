@@ -12,8 +12,9 @@ class MealPhoto {
   final Map<String, dynamic>? nutritionInfo;
   final String? notes;
   final String? userId;
+  final bool isAnalyzing;
 
-  MealPhoto({
+  const MealPhoto({
     required this.id,
     this.imageBytes,
     this.imagePath,
@@ -23,6 +24,7 @@ class MealPhoto {
     this.nutritionInfo,
     this.notes,
     this.userId,
+    this.isAnalyzing = false,
   });
 
   Map<String, dynamic> toJson() => {
@@ -35,6 +37,7 @@ class MealPhoto {
         'nutrition_info': nutritionInfo,
         'notes': notes,
         'user_id': userId,
+        'is_analyzing': isAnalyzing,
       };
 
   factory MealPhoto.fromJson(Map<String, dynamic> json) {
@@ -48,6 +51,7 @@ class MealPhoto {
       nutritionInfo: json['nutrition_info'],
       notes: json['notes'],
       userId: json['user_id'],
+      isAnalyzing: (json['is_analyzing'] as bool?) ?? false,
     );
   }
 
@@ -61,6 +65,7 @@ class MealPhoto {
     Map<String, dynamic>? nutritionInfo,
     String? notes,
     String? userId,
+    bool? isAnalyzing,
   }) {
     return MealPhoto(
       id: id ?? this.id,
@@ -72,8 +77,7 @@ class MealPhoto {
       nutritionInfo: nutritionInfo ?? this.nutritionInfo,
       notes: notes ?? this.notes,
       userId: userId ?? this.userId,
+      isAnalyzing: isAnalyzing ?? this.isAnalyzing,
     );
   }
 }
-
-
