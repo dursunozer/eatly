@@ -57,17 +57,17 @@ class HomeViewModel extends BaseViewModel {
     _todayMealPhotosFuture = null;
     notifyListeners();
   }
-
-  // Öğün fotoğrafını sil (sadece yerel listeden)
+  
+  // Öğün fotoğrafını sil (yerel + uzak)
   Future<void> deleteMealPhoto(String id) async {
     try {
       await _mealPhotoService.deleteMealPhoto(id);
-      // Cache'i temizle ve UI'yi yenile
-      _todayMealPhotosFuture = null;
-      notifyListeners();
-    } catch (e) {
-      // Hata durumunda sessizce geç
-    }
+      // Uzakta bugünkü en yeni kaydı deleted=true yap (yaklaşık eşleşme)
+      await _photoService.markTodayPhotoDeletedApprox();
+    } catch (_) {}
+    // Cache'i temizle ve UI'yi yenile
+    _todayMealPhotosFuture = null;
+    notifyListeners();
   }
   
   Future<List<String>> getTodayPhotoUrls() async {

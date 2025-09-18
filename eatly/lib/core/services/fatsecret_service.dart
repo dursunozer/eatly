@@ -79,8 +79,9 @@ class FatSecretService {
 
     final Map<String, dynamic> payload = {
       'image_b64': imageB64,
+      // Daha iyi tanıma için dil EN ile A/B test; bölgeyi opsiyonel bırak
       'region': region ?? EnvConfig.fatSecretRegion,
-      'language': language ?? EnvConfig.fatSecretLanguage,
+      'language': language ?? 'en',
       'include_food_data': includeFoodData,
     };
 

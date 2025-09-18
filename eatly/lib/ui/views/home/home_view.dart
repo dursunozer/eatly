@@ -219,9 +219,9 @@ class HomeView extends StackedView<HomeViewModel> {
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final p = items[index];
-                 return _SwipeableRow(
-                   photo: p,
-                   onDelete: () => viewModel.deleteMealPhoto(p.id),
+                return _SwipeableRow(
+                  photo: p,
+                  onDelete: () => viewModel.deleteMealPhoto(p.id),
                 );
               },
             );
@@ -253,83 +253,51 @@ class _SwipeableRow extends StatefulWidget {
 
 class _SwipeableRowState extends State<_SwipeableRow>
     with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _scaleAnimation;
-  bool _isDeleting = false;
+  late AnimationController _controller;
+  bool _armedToDelete = false; // İlk sola kaydırmada kolu kur, ikincide sil
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: Offset.zero,
-      end: const Offset(-1.0, 0.0),
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _controller.dispose();
     super.dispose();
-  }
-
-  void _handleDelete() async {
-    setState(() {
-      _isDeleting = true;
-    });
-    
-    await _animationController.forward();
-    widget.onDelete();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value == 0.0 ? 0.0 : 1.0 - (_scaleAnimation.value * 0.1),
-          child: SlideTransition(
-            position: _slideAnimation,
-            child: Dismissible(
-              key: Key(widget.photo.id),
-              direction: DismissDirection.endToStart,
-              background: _buildDeleteBackground(),
-              confirmDismiss: (direction) async {
-                _handleDelete();
-                return false; // Dismissible'ın kendi animasyonunu engelle
-              },
-              child: _MealRow(photo: widget.photo),
-            ),
-          ),
-        );
+    return Dismissible(
+      key: Key(widget.photo.id),
+      direction: DismissDirection.endToStart,
+      background: _buildDeleteBackground(armed: _armedToDelete),
+      confirmDismiss: (direction) async {
+        if (!_armedToDelete) {
+          setState(() => _armedToDelete = true);
+          await _controller.forward();
+          // İlk kaydırmada sadece silme arayüzünü göster
+          return false;
+        }
+        // İkinci kaydırmada sil
+        widget.onDelete();
+        return true;
       },
+      child: _MealRow(photo: widget.photo),
     );
   }
 
-  Widget _buildDeleteBackground() {
+  Widget _buildDeleteBackground({required bool armed}) {
     return Container(
       alignment: Alignment.centerRight,
-      padding: const EdgeInsets.only(right: 20),
+      padding: const EdgeInsets.only(right: 18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.red.shade400,
-            Colors.red.shade600,
+            armed ? Colors.red.shade600 : Colors.red.shade400,
+            armed ? Colors.red.shade700 : Colors.red.shade500,
           ],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
@@ -337,27 +305,28 @@ class _SwipeableRowState extends State<_SwipeableRow>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.red.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.red.withOpacity(0.25),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Icon(
-            Icons.delete_sweep,
-            color: Colors.white,
-            size: 28,
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Sil',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+          AnimatedScale(
+            duration: const Duration(milliseconds: 180),
+            scale: armed ? 1.1 : 1.0,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(armed ? Icons.delete_forever : Icons.delete_sweep, color: Colors.white, size: 26),
+                const SizedBox(height: 4),
+                Text(
+                  armed ? 'Tekrar çek silinsin' : 'Sola çek',
+                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                ),
+              ],
             ),
           ),
         ],
@@ -384,44 +353,45 @@ class _MealRow extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: SizedBox(width: 72, height: 72, child: _buildImage()),
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(width: 80, height: 80, child: _buildImage()),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (photo.isAnalyzing)
-                  const Text(
-                    'Fotoğraf analiz ediliyor...',
-                    style: TextStyle(color: AppTheme.textSecondary),
+                  Text(
+                    photo.isWaitingNetwork
+                        ? 'İnternet gelince analiz yapılacak...'
+                        : 'Fotoğraf analiz ediliyor...',
+                    style: const TextStyle(color: AppTheme.textSecondary),
                   )
                 else if (photo.detectedItems.isNotEmpty)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Besin isimleri
-                  Wrap(
-                        spacing: 4,
-                        runSpacing: 2,
-                    children: photo.detectedItems
-                            .take(3)
+                      Wrap(
+                    spacing: 6,
+                        runSpacing: 4,
+                        children: photo.detectedItems
                             .map((item) => Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
                                     color: AppTheme.primaryColor.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
                                     item['name']?.toString() ?? '-',
                                     style: TextStyle(
-                                      fontSize: 11,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                       color: AppTheme.primaryColor,
                                     ),
@@ -429,8 +399,8 @@ class _MealRow extends StatelessWidget {
                             ))
                         .toList(),
                       ),
-                      const SizedBox(height: 8),
-                      // Toplam besin değerleri
+                      const SizedBox(height: 12),
+                      // Toplam besin değerleri (tüm öğeleri kullan)
                       _buildTotalNutrition(photo.detectedItems),
                     ],
                   )
@@ -486,7 +456,7 @@ class _MealRow extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -520,16 +490,60 @@ class _MealRow extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
+          const SizedBox(height: 10),
+          Row(
             children: [
-              _buildCompactNutrition('${totalWeight.toInt()}g', 'Ağırlık', Colors.grey),
-              _buildCompactNutrition('${totalCalories.toInt()}', 'Kalori', Colors.orange),
-              _buildCompactNutrition('${totalProtein.toInt()}g', 'Protein', Colors.blue),
-              _buildCompactNutrition('${totalCarbs.toInt()}g', 'Karb', Colors.green),
-              _buildCompactNutrition('${totalFat.toInt()}g', 'Yağ', Colors.purple),
+              Expanded(
+                child: _buildNutritionItem(
+                  '${totalWeight.toInt()}g',
+                  'Ağırlık',
+                  Icons.scale,
+                  Colors.grey,
+                ),
+              ),
+              Expanded(
+                child: _buildNutritionItem(
+                  '${totalCalories.toInt()}',
+                  'Kalori',
+                  Icons.local_fire_department,
+                  Colors.orange,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _buildNutritionItem(
+                  '${totalProtein.toInt()}g',
+                  'Protein',
+                  Icons.fitness_center,
+                  Colors.blue,
+                ),
+              ),
+              Expanded(
+                child: _buildNutritionItem(
+                  '${totalCarbs.toInt()}g',
+                  'Karbonhidrat',
+                  Icons.grain,
+                  Colors.green,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _buildNutritionItem(
+                  '${totalFat.toInt()}g',
+                  'Yağ',
+                  Icons.water_drop,
+                  Colors.purple,
+                ),
+              ),
+              const Expanded(child: SizedBox()), // Boş alan
             ],
           ),
         ],
@@ -537,37 +551,138 @@ class _MealRow extends StatelessWidget {
     );
   }
 
-  Widget _buildCompactNutrition(String value, String label, Color color) {
+  Widget _buildNutritionItem(String value, String label, IconData icon, Color color) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 6),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                color: color,
+              ),
+            ),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 10,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFoodItem(Map<String, dynamic> item) {
+    final name = item['name']?.toString() ?? 'Bilinmeyen';
+    final confidence = (item['confidence'] as num?)?.toDouble() ?? 0.0;
+    final nutrition = item['nutrition'] as Map<String, dynamic>?;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              if (confidence > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${(confidence * 100).toInt()}%',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (nutrition != null) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                _buildNutritionBadge(
+                  '${nutrition['calories']?.toInt() ?? 0} kcal',
+                  Colors.orange,
+                  Icons.local_fire_department,
+                ),
+                _buildNutritionBadge(
+                  'P: ${nutrition['protein']?.toInt() ?? 0}g',
+                  Colors.blue,
+                  Icons.fitness_center,
+                ),
+                _buildNutritionBadge(
+                  'C: ${nutrition['carbohydrate']?.toInt() ?? nutrition['carbs']?.toInt() ?? 0}g',
+                  Colors.green,
+                  Icons.grain,
+                ),
+                _buildNutritionBadge(
+                  'Y: ${nutrition['fat']?.toInt() ?? 0}g',
+                  Colors.purple,
+                  Icons.water_drop,
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNutritionBadge(String text, Color color, IconData icon) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(6),
       ),
-      child: Column(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 3),
           Text(
-            value,
+            text,
             style: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 11,
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
               color: color,
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 8,
-              color: color.withOpacity(0.7),
             ),
           ),
         ],
       ),
     );
   }
-
-  // Eski metotlar kaldırıldı - artık kompakt tasarım kullanılıyor
 
   Widget _buildImage() {
     if (photo.imageBytes != null) {

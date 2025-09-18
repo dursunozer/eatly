@@ -22,6 +22,7 @@ import '../../../core/services/photo_service.dart';
 import '../../../core/services/powersync_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/services/meal_photo_service.dart';
+import '../../../core/services/analysis_service.dart';
 
 class CameraViewModel extends BaseViewModel {
   final _navigationService = locator<NavigationService>();
@@ -111,14 +112,17 @@ class CameraViewModel extends BaseViewModel {
   Future<void> _processImage(XFile imageXFile) async {
     try {
       debugPrint('🔄 Fotoğraf işleniyor...');
+      // 1) Ham (yüksek kaliteli) baytlar - API analizine bu gidecek
       final Uint8List rawBytes = await imageXFile.readAsBytes();
       _printBytesSize(rawBytes, 'Raw image');
-      final Uint8List bytes = await _compressMobile(rawBytes);
-      _printBytesSize(bytes, 'Compressed image');
+
+      // 2) Sıkıştırılmış baytlar - cihazda ve UI'da bu saklanacak/gösterilecek
+      final Uint8List compressedBytes = await _compressMobile(rawBytes);
+      _printBytesSize(compressedBytes, 'Compressed image');
 
       // 1) Fotoğrafı hemen "Son Öğünler" listesine ekle (analiz beklenmeden)
       debugPrint('📱 Yerel listeye ekleniyor...');
-      final String tempId = await _mealPhotoService.addPhoto(bytes);
+      final String tempId = await _mealPhotoService.addPhoto(compressedBytes);
       debugPrint('✅ Yerel listeye eklendi: $tempId');
 
       // 2) Ana ekrana dön ve Home'ı yenile
@@ -127,11 +131,11 @@ class CameraViewModel extends BaseViewModel {
 
       // 3) Arka planda: yerel kuyruğa ekle (UploaderService otomatik Supabase'e yükler)
       debugPrint('💾 Yerel kuyruğa ekleniyor...');
-      await _enqueueLocalSave(bytes);
+      await _enqueueLocalSave(compressedBytes);
 
       // 4) Arka planda: analiz et ve sonucu güncelle
-      debugPrint('🔍 Analiz başlatılıyor...');
-      unawaited(_performAnalysis(tempId, bytes));
+      debugPrint('🔍 Analiz (ham kalite) başlatılıyor...');
+      unawaited(_performAnalysis(tempId, rawBytes));
     } catch (e) {
       debugPrint('❌ Fotoğraf işleme hatası: $e');
       _snackbarService.showSnackbar(
@@ -153,18 +157,35 @@ class CameraViewModel extends BaseViewModel {
       
       // Analiz tamamlandığında bildirim göster
       if (detected.isNotEmpty) {
-        final names = detected.take(2).map((e) => e['name']).join(', ');
+        final preview = detected.take(3).map((e) => e['name']).join(', ');
+        final more = detected.length > 3 ? ' ve ${detected.length - 3} besin daha' : '';
         _snackbarService.showSnackbar(
-          message: '$names ve ${detected.length > 2 ? '${detected.length - 2} besin daha' : ''} tespit edildi!',
+          message: '$preview$more tespit edildi!',
           duration: const Duration(seconds: 3),
         );
       }
     } catch (e) {
       debugPrint('❌ Analiz hatası: $e');
-      _snackbarService.showSnackbar(
-        message: 'Analiz tamamlanamadı: $e',
-        duration: const Duration(seconds: 3),
-      );
+      // Çevrimdışı veya geçici hata durumunda kuyruğa al
+      try {
+        final String rawPath = await AnalysisService.instance.saveRawBytesToFile(bytes);
+        await AppPowerSync.instance.db.execute(
+          'insert or replace into local_analysis (temp_id, raw_path, created_at) values (?, ?, ?)',
+          [tempId, rawPath, DateTime.now().toIso8601String()],
+        );
+        // UI: ağ bekleniyor
+        await _mealPhotoService.markWaitingNetwork(id: tempId, waiting: true);
+        // Bağlantı gelince otomatik çalışacak; kullanıcıyı bilgilendir
+        _snackbarService.showSnackbar(
+          message: 'Analiz internet geldiğinde tamamlanacak',
+          duration: const Duration(seconds: 3),
+        );
+      } catch (_) {
+        _snackbarService.showSnackbar(
+          message: 'Analiz tamamlanamadı: $e',
+          duration: const Duration(seconds: 3),
+        );
+      }
     }
   }
 
@@ -247,6 +268,7 @@ class CameraViewModel extends BaseViewModel {
   
   Future<Uint8List> _compressMobile(Uint8List input) async {
     try {
+      // UI ve depolama için makul boyut: ~300-600KB civarı hedefle
       Uint8List current = Uint8List.fromList(
         await FlutterImageCompress.compressWithList(
           input,
@@ -257,12 +279,12 @@ class CameraViewModel extends BaseViewModel {
           keepExif: false,
         ),
       );
-      if (current.lengthInBytes > 250 * 1024) {
+      if (current.lengthInBytes > 600 * 1024) {
         current = Uint8List.fromList(
           await FlutterImageCompress.compressWithList(
             current,
-            quality: 70,
-            minWidth: 1024,
+            quality: 72,
+            minWidth: 1280,
             format: CompressFormat.jpeg,
             autoCorrectionAngle: true,
             keepExif: false,

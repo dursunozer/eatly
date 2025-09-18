@@ -62,11 +62,55 @@ class MealPhotoService {
       notes: null,
       userId: null,
       isAnalyzing: true,
+      isWaitingNetwork: false,
     );
     list.add(photo.toJson());
 
     await prefs.setString(_prefsKey, jsonEncode(list));
     return id;
+  }
+
+  Future<void> markWaitingNetwork({required String id, required bool waiting}) async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String? raw = prefs.getString(_prefsKey);
+      if (raw == null || raw.isEmpty) return;
+      final List<dynamic> list = jsonDecode(raw) as List<dynamic>;
+      for (int i = 0; i < list.length; i++) {
+        final Map<String, dynamic> m = Map<String, dynamic>.from(list[i] as Map);
+        if (m['id'] == id) {
+          final MealPhoto current = MealPhoto.fromJson(m);
+          final MealPhoto next = current.copyWith(
+            isWaitingNetwork: waiting,
+            isAnalyzing: !waiting && current.isAnalyzing ? true : current.isAnalyzing,
+          );
+          list[i] = next.toJson();
+          break;
+        }
+      }
+      await prefs.setString(_prefsKey, jsonEncode(list));
+    } catch (_) {}
+  }
+
+  Future<void> markAnalyzing({required String id, required bool analyzing}) async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String? raw = prefs.getString(_prefsKey);
+      if (raw == null || raw.isEmpty) return;
+      final List<dynamic> list = jsonDecode(raw) as List<dynamic>;
+      for (int i = 0; i < list.length; i++) {
+        final Map<String, dynamic> m = Map<String, dynamic>.from(list[i] as Map);
+        if (m['id'] == id) {
+          final MealPhoto current = MealPhoto.fromJson(m);
+          final MealPhoto next = current.copyWith(
+            isAnalyzing: analyzing,
+          );
+          list[i] = next.toJson();
+          break;
+        }
+      }
+      await prefs.setString(_prefsKey, jsonEncode(list));
+    } catch (_) {}
   }
 
   /// Analiz tamamlandığında tespit edilen öğeler ve besin bilgisiyle kaydı günceller.
@@ -107,40 +151,36 @@ class MealPhotoService {
     }
   }
 
-  /// Belirli bir fotoğrafı siler
-  Future<void> deleteMealPhoto(String id) async {
-    try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final String? raw = prefs.getString(_prefsKey);
-      if (raw == null || raw.isEmpty) return;
-
-      final List<dynamic> list = jsonDecode(raw) as List<dynamic>;
-      list.removeWhere((item) {
-        final Map<String, dynamic> m = Map<String, dynamic>.from(item as Map);
-        return m['id'] == id;
-      });
-
-      await prefs.setString(_prefsKey, jsonEncode(list));
-      
-      // Fotoğraf dosyasını da sil
-      try {
-        final dir = await getApplicationDocumentsDirectory();
-        final String imagePath = '${dir.path}/meal_thumb_$id.jpg';
-        final file = File(imagePath);
-        if (await file.exists()) {
-          await file.delete();
-        }
-      } catch (_) {
-        // Dosya silme hatası sessizce geçilir
-      }
-    } catch (_) {
-      // Hata durumunda sessizce geç
-    }
-  }
-
   Future<void> clearAll() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove(_prefsKey);
+  }
+
+  /// Yerel listeden ve varsa thumb dosyasından siler
+  Future<void> deleteMealPhoto(String id) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? raw = prefs.getString(_prefsKey);
+    if (raw == null || raw.isEmpty) return;
+
+    final List<dynamic> list = jsonDecode(raw) as List<dynamic>;
+    list.removeWhere((e) {
+      final m = Map<String, dynamic>.from(e as Map);
+      final match = m['id'] == id;
+      if (match) {
+        final path = m['image_path'] as String?;
+        if (path != null && path.isNotEmpty) {
+          try {
+            final f = File(path);
+            if (f.existsSync()) {
+              f.deleteSync();
+            }
+          } catch (_) {}
+        }
+      }
+      return match;
+    });
+
+    await prefs.setString(_prefsKey, jsonEncode(list));
   }
 }
 

@@ -14,6 +14,8 @@ import 'core/services/uploader_service.dart';
 import 'core/services/daily_cleanup_service.dart';
 import 'core/services/timezone_service.dart';
 import 'core/services/profile_service.dart';
+import 'core/services/connectivity_service.dart';
+import 'core/services/analysis_service.dart';
 
 final supabase = Supabase.instance.client;
 
@@ -52,6 +54,8 @@ Future<void> main() async {
     await AppPowerSync.instance.initialize();
     UploaderService.instance.start();
     DailyCleanupService.instance.start();
+    AnalysisService.instance.start();
+    await ConnectivityService.instance.start();
   }
   
   runApp(const EatlyApp());

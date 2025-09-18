@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:stacked/stacked.dart';
 import 'camera_viewmodel.dart';
-import '../../../core/theme/app_theme.dart';
 
 class CameraView extends StackedView<CameraViewModel> {
   const CameraView({super.key});
@@ -34,9 +33,7 @@ class CameraView extends StackedView<CameraViewModel> {
           if (viewModel.isInitialized && viewModel.controller != null)
             Center(child: CameraPreview(viewModel.controller!))
           else
-            const Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
+            const Center(child: CircularProgressIndicator(color: Colors.white)),
           Positioned(
             bottom: 0,
             left: 0,
@@ -47,10 +44,7 @@ class CameraView extends StackedView<CameraViewModel> {
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.8),
-                    Colors.transparent,
-                  ],
+                  colors: [Colors.black.withOpacity(0.8), Colors.transparent],
                 ),
               ),
               child: Row(
@@ -65,7 +59,9 @@ class CameraView extends StackedView<CameraViewModel> {
                     onPressed: viewModel.toggleFlash,
                   ),
                   GestureDetector(
-                    onTap: viewModel.isProcessing ? null : viewModel.takePicture,
+                    onTap: viewModel.isProcessing
+                        ? null
+                        : viewModel.takePicture,
                     child: Container(
                       width: 70,
                       height: 70,

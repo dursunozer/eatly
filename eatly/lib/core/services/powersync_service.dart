@@ -49,6 +49,15 @@ class AppPowerSync {
       'remote_path text)',
     );
 
+    // Analiz kuyruğu: çevrimdışıyken başarısız olan analizleri bekletir
+    await db.execute(
+      'create table if not exists local_analysis ('
+      'temp_id text primary key, '
+      'raw_path text not null, '
+      'created_at text not null, '
+      'attempts integer not null default 0)'
+    );
+
     // Not: Bağlantı için doğru Connector sınıfını kullanın (SDK sürümüne göre değişebilir).
     // Örnek: await db.connect(connector: PowerSyncWebSocketClient(
     //   endpoint: Uri.parse('wss://66be7773dc29913faf840d21.powersync.journeyapps.com'),

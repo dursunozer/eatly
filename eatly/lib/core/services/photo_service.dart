@@ -87,6 +87,27 @@ class PhotoService {
         .limit(1);
     return res.isNotEmpty;
   }
+
+  /// Bugünkü bir öğün kaydını yaklaşık eşleşmeyle sil (deleted=true yap)
+  /// Kullanım: ad, saat vb. yoksa, en son oluşturulan kaydı işaretle
+  Future<void> markTodayPhotoDeletedApprox() async {
+    final String? uid = _client.auth.currentUser?.id;
+    if (uid == null) return;
+    // Bugün oluşturulan, silinmemiş en yeni kaydı getir
+    final List<dynamic> rows = await _client
+        .from('user_photos')
+        .select('id, created_at, deleted')
+        .eq('user_id', uid)
+        .eq('deleted', false)
+        .order('created_at', ascending: false)
+        .limit(1);
+    if (rows.isEmpty) return;
+    final id = rows.first['id'];
+    await _client
+        .from('user_photos')
+        .update({'deleted': true, 'updated_at': DateTime.now().toUtc().toIso8601String()})
+        .eq('id', id);
+  }
 }
 
 

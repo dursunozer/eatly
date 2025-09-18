@@ -13,6 +13,7 @@ class MealPhoto {
   final String? notes;
   final String? userId;
   final bool isAnalyzing;
+  final bool isWaitingNetwork;
 
   const MealPhoto({
     required this.id,
@@ -25,6 +26,7 @@ class MealPhoto {
     this.notes,
     this.userId,
     this.isAnalyzing = false,
+    this.isWaitingNetwork = false,
   });
 
   Map<String, dynamic> toJson() => {
@@ -38,6 +40,7 @@ class MealPhoto {
         'notes': notes,
         'user_id': userId,
         'is_analyzing': isAnalyzing,
+        'is_waiting_network': isWaitingNetwork,
       };
 
   factory MealPhoto.fromJson(Map<String, dynamic> json) {
@@ -52,6 +55,7 @@ class MealPhoto {
       notes: json['notes'],
       userId: json['user_id'],
       isAnalyzing: (json['is_analyzing'] as bool?) ?? false,
+      isWaitingNetwork: (json['is_waiting_network'] as bool?) ?? false,
     );
   }
 
@@ -66,6 +70,7 @@ class MealPhoto {
     String? notes,
     String? userId,
     bool? isAnalyzing,
+    bool? isWaitingNetwork,
   }) {
     return MealPhoto(
       id: id ?? this.id,
@@ -78,6 +83,7 @@ class MealPhoto {
       notes: notes ?? this.notes,
       userId: userId ?? this.userId,
       isAnalyzing: isAnalyzing ?? this.isAnalyzing,
+      isWaitingNetwork: isWaitingNetwork ?? this.isWaitingNetwork,
     );
   }
 }
