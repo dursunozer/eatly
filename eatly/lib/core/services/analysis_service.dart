@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'fatsecret_service.dart';
 import 'meal_photo_service.dart';
 import 'powersync_service.dart';
+import 'app_events.dart';
 
 class AnalysisService {
   AnalysisService._();
@@ -47,6 +48,7 @@ class AnalysisService {
           final Map<String, dynamic> fs = await fat.recognizeImage(imageBytes: bytes);
           final List<Map<String, dynamic>> detected = _extractDetectedItemsFromFatSecret(fs);
           await MealPhotoService().updateDetectedItems(id: tempId, detectedItems: detected);
+          AppEvents.instance.emitPhotoAnalyzed(tempId);
           await db.execute('delete from local_analysis where temp_id = ?', [tempId]);
         } catch (e) {
           // deneme sayısını artır

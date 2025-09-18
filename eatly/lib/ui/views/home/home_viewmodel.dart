@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:stacked/stacked.dart';
+import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import '../../../core/models/daily_summary.dart';
 import '../../../core/services/profile_service.dart';
@@ -10,8 +11,9 @@ import '../../../core/services/powersync_service.dart';
 import '../../../core/services/meal_photo_service.dart';
 import '../../../core/models/meal_photo.dart';
 import '../../../app/app.locator.dart';
+import '../../../core/services/app_events.dart';
 
-class HomeViewModel extends BaseViewModel {
+class HomeViewModel extends BaseViewModel with WidgetsBindingObserver {
   final _authService = locator<AuthService>();
   final _photoService = locator<PhotoService>();
   final MealPhotoService _mealPhotoService = MealPhotoService();
@@ -39,6 +41,16 @@ class HomeViewModel extends BaseViewModel {
   }
 
   Future<void> init() async {
+    WidgetsBinding.instance.addObserver(this);
+    // App içi olaylar: foto eklendi / analiz tamamlandı -> yenile
+    AppEvents.instance.stream.listen((event) {
+      switch (event.type) {
+        case AppEventType.photoAdded:
+        case AppEventType.photoAnalyzed:
+          refreshPhotos();
+          break;
+      }
+    });
     try {
       final uid = _authService.currentUserId;
       if (uid != null) {
@@ -50,6 +62,19 @@ class HomeViewModel extends BaseViewModel {
       // ignore
     }
     notifyListeners();
+  }
+  
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+  
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      refreshPhotos();
+    }
   }
   
   // Manuel yenileme - Future cache'ini temizler

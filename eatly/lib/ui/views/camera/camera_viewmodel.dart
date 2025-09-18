@@ -23,6 +23,7 @@ import '../../../core/services/powersync_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/services/meal_photo_service.dart';
 import '../../../core/services/analysis_service.dart';
+import '../../../core/services/app_events.dart';
 
 class CameraViewModel extends BaseViewModel {
   final _navigationService = locator<NavigationService>();
@@ -124,6 +125,7 @@ class CameraViewModel extends BaseViewModel {
       debugPrint('📱 Yerel listeye ekleniyor...');
       final String tempId = await _mealPhotoService.addPhoto(compressedBytes);
       debugPrint('✅ Yerel listeye eklendi: $tempId');
+      AppEvents.instance.emitPhotoAdded(tempId);
 
       // 2) Ana ekrana dön ve Home'ı yenile
       debugPrint('🏠 Ana ekrana dönülüyor...');
@@ -154,6 +156,7 @@ class CameraViewModel extends BaseViewModel {
       final List<Map<String, dynamic>> detected = _extractDetectedItemsFromFatSecret(fs);
       await _mealPhotoService.updateDetectedItems(id: tempId, detectedItems: detected);
       debugPrint('✅ Analiz tamamlandı: ${detected.length} öğe');
+      AppEvents.instance.emitPhotoAnalyzed(tempId);
       
       // Analiz tamamlandığında bildirim göster
       if (detected.isNotEmpty) {

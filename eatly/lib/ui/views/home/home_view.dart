@@ -184,41 +184,41 @@ class HomeView extends StackedView<HomeViewModel> {
         const SizedBox(height: 0),
         FutureBuilder(
           future: viewModel.todayMealPhotosFuture,
-              builder: (context, snapshot) {
-                final items = snapshot.data ?? <MealPhoto>[];
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (items.isEmpty) {
-                  return Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.restaurant_menu,
-                              size: 64,
-                              color: Colors.grey.shade300,
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'Henüz öğün eklemediniz',
-                              style: TextStyle(color: AppTheme.textSecondary),
-                            ),
-                          ],
+          builder: (context, snapshot) {
+            final items = snapshot.data ?? <MealPhoto>[];
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (items.isEmpty) {
+              return Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.restaurant_menu,
+                          size: 64,
+                          color: Colors.grey.shade300,
                         ),
-                      ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Henüz öğün eklemediniz',
+                          style: TextStyle(color: AppTheme.textSecondary),
+                        ),
+                      ],
                     ),
-                  );
-                }
-                return ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: items.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final p = items[index];
+                  ),
+                ),
+              );
+            }
+            return ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: items.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final p = items[index];
                 return _SwipeableRow(
                   photo: p,
                   onDelete: () => viewModel.deleteMealPhoto(p.id),
@@ -259,7 +259,10 @@ class _SwipeableRowState extends State<_SwipeableRow>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    );
   }
 
   @override
@@ -320,11 +323,19 @@ class _SwipeableRowState extends State<_SwipeableRow>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(armed ? Icons.delete_forever : Icons.delete_sweep, color: Colors.white, size: 26),
+                Icon(
+                  armed ? Icons.delete_forever : Icons.delete_sweep,
+                  color: Colors.white,
+                  size: 26,
+                ),
                 const SizedBox(height: 4),
                 Text(
                   armed ? 'Tekrar çek silinsin' : 'Sola çek',
-                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -369,8 +380,8 @@ class _MealRow extends StatelessWidget {
                 if (photo.isAnalyzing)
                   Text(
                     photo.isWaitingNetwork
-                        ? 'İnternet gelince analiz yapılacak...'
-                        : 'Fotoğraf analiz ediliyor...',
+                        ? 'İnternet Bağlantısı Kurulduğunda Analiz Başlayacak'
+                        : 'Fotoğraf Aaliz Ediliyor...',
                     style: const TextStyle(color: AppTheme.textSecondary),
                   )
                 else if (photo.detectedItems.isNotEmpty)
@@ -379,25 +390,30 @@ class _MealRow extends StatelessWidget {
                     children: [
                       // Besin isimleri
                       Wrap(
-                    spacing: 6,
+                        spacing: 6,
                         runSpacing: 4,
                         children: photo.detectedItems
-                            .map((item) => Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.primaryColor.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
+                            .map(
+                              (item) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  item['name']?.toString() ?? '-',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppTheme.primaryColor,
                                   ),
-                                  child: Text(
-                                    item['name']?.toString() ?? '-',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: AppTheme.primaryColor,
-                                    ),
-                                  ),
-                            ))
-                        .toList(),
+                                ),
+                              ),
+                            )
+                            .toList(),
                       ),
                       const SizedBox(height: 12),
                       // Toplam besin değerleri (tüm öğeleri kullan)
@@ -430,8 +446,10 @@ class _MealRow extends StatelessWidget {
       if (nutrition != null) {
         totalCalories += (nutrition['calories'] as num?)?.toDouble() ?? 0;
         totalProtein += (nutrition['protein'] as num?)?.toDouble() ?? 0;
-        totalCarbs += (nutrition['carbohydrate'] as num?)?.toDouble() ?? 
-                     (nutrition['carbs'] as num?)?.toDouble() ?? 0;
+        totalCarbs +=
+            (nutrition['carbohydrate'] as num?)?.toDouble() ??
+            (nutrition['carbs'] as num?)?.toDouble() ??
+            0;
         totalFat += (nutrition['fat'] as num?)?.toDouble() ?? 0;
         // Tahmini ağırlık hesabı (kalori/4 yaklaşımı)
         totalWeight += ((nutrition['calories'] as num?)?.toDouble() ?? 0) / 4;
@@ -447,10 +465,7 @@ class _MealRow extends StatelessWidget {
         ),
         child: const Text(
           'Besin değerleri hesaplanıyor...',
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 12,
-          ),
+          style: TextStyle(color: Colors.grey, fontSize: 12),
         ),
       );
     }
@@ -474,11 +489,7 @@ class _MealRow extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.restaurant,
-                size: 16,
-                color: AppTheme.primaryColor,
-              ),
+              Icon(Icons.restaurant, size: 16, color: AppTheme.primaryColor),
               const SizedBox(width: 6),
               Text(
                 'Toplam Besin Değerleri',
@@ -551,7 +562,12 @@ class _MealRow extends StatelessWidget {
     );
   }
 
-  Widget _buildNutritionItem(String value, String label, IconData icon, Color color) {
+  Widget _buildNutritionItem(
+    String value,
+    String label,
+    IconData icon,
+    Color color,
+  ) {
     return Row(
       children: [
         Icon(icon, size: 14, color: color),
@@ -569,10 +585,7 @@ class _MealRow extends StatelessWidget {
             ),
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 10,
-                color: Colors.grey,
-              ),
+              style: const TextStyle(fontSize: 10, color: Colors.grey),
             ),
           ],
         ),
@@ -584,7 +597,7 @@ class _MealRow extends StatelessWidget {
     final name = item['name']?.toString() ?? 'Bilinmeyen';
     final confidence = (item['confidence'] as num?)?.toDouble() ?? 0.0;
     final nutrition = item['nutrition'] as Map<String, dynamic>?;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -609,7 +622,10 @@ class _MealRow extends StatelessWidget {
               ),
               if (confidence > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
