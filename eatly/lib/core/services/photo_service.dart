@@ -76,6 +76,48 @@ class PhotoService {
     return urls;
   }
 
+  Future<String> saveUserMealPhotoV2({
+    required Uint8List bytes,
+    required String localId,
+    List<Map<String, dynamic>>? labels,
+    List<Map<String, dynamic>>? objects,
+    Map<String, dynamic>? nutrition,
+  }) async {
+    try {
+      final String? userId = _client.auth.currentUser?.id;
+      if (userId == null) throw Exception('Kullanıcı girişi yapılmamış');
+
+      final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final String storagePath = 'meals/$userId/$fileName';
+
+      // 1) Storage'a yükle
+      await _client.storage.from(_bucket).uploadBinary(
+        storagePath,
+        bytes,
+        fileOptions: const FileOptions(
+          cacheControl: '3600', // 1 saat
+          upsert: false,
+          contentType: 'image/jpeg',
+        ),
+      );
+
+      // 2) Tabloya kaydet
+      await _client.from('user_photos').insert({
+        'user_id': userId,
+        'storage_path': storagePath,
+        'taken_at': DateTime.now().toUtc().toIso8601String(),
+        'labels': labels,
+        'objects': objects,
+        'nutrition': nutrition,
+        'local_id': localId,
+      });
+
+      return storagePath;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<bool> existsUserPhoto({required String storagePath}) async {
     final String? uid = _client.auth.currentUser?.id;
     if (uid == null) return false;

@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+RULE: All responses must be written in Turkish.  
+Description: Regardless of the language the user uses, the assistant must always reply in Turkish.

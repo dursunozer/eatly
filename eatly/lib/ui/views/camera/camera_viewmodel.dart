@@ -121,23 +121,26 @@ class CameraViewModel extends BaseViewModel {
       final Uint8List compressedBytes = await _compressMobile(rawBytes);
       _printBytesSize(compressedBytes, 'Compressed image');
 
+      // 0) Tüm işlemler için TEK bir benzersiz ID oluştur
+      final String uniqueId = DateTime.now().millisecondsSinceEpoch.toString();
+
       // 1) Fotoğrafı hemen "Son Öğünler" listesine ekle (analiz beklenmeden)
-      debugPrint('📱 Yerel listeye ekleniyor...');
-      final String tempId = await _mealPhotoService.addPhoto(compressedBytes);
-      debugPrint('✅ Yerel listeye eklendi: $tempId');
-      AppEvents.instance.emitPhotoAdded(tempId);
+      debugPrint('📱 Yerel listeye ekleniyor (ID: $uniqueId)...');
+      await _mealPhotoService.addPhoto(compressedBytes, id: uniqueId);
+      debugPrint('✅ Yerel listeye eklendi: $uniqueId');
+      AppEvents.instance.emitPhotoAdded(uniqueId);
 
       // 2) Ana ekrana dön ve Home'ı yenile
       debugPrint('🏠 Ana ekrana dönülüyor...');
-      _navigationService.back(result: {'newPhoto': true, 'photoId': tempId});
+      _navigationService.back(result: {'newPhoto': true, 'photoId': uniqueId});
 
       // 3) Arka planda: yerel kuyruğa ekle (UploaderService otomatik Supabase'e yükler)
-      debugPrint('💾 Yerel kuyruğa ekleniyor...');
-      await _enqueueLocalSave(compressedBytes);
+      debugPrint('💾 Yerel kuyruğa ekleniyor (ID: $uniqueId)...');
+      await _enqueueLocalSave(uniqueId, compressedBytes);
 
       // 4) Arka planda: analiz et ve sonucu güncelle
-      debugPrint('🔍 Analiz (ham kalite) başlatılıyor...');
-      unawaited(_performAnalysis(tempId, rawBytes));
+      debugPrint('🔍 Analiz (ham kalite) başlatılıyor (ID: $uniqueId)...');
+      unawaited(_performAnalysis(uniqueId, rawBytes));
     } catch (e) {
       debugPrint('❌ Fotoğraf işleme hatası: $e');
       _snackbarService.showSnackbar(
@@ -192,9 +195,8 @@ class CameraViewModel extends BaseViewModel {
     }
   }
 
-  Future<void> _enqueueLocalSave(Uint8List imageBytes) async {
+  Future<void> _enqueueLocalSave(String id, Uint8List imageBytes) async {
     try {
-      final id = DateTime.now().millisecondsSinceEpoch.toString();
       final dir = await getApplicationDocumentsDirectory();
       final String filePath = '${dir.path}/meal_$id.jpg';
       final file = File(filePath);

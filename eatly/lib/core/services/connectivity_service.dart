@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'uploader_service.dart';
 import 'analysis_service.dart';
@@ -34,7 +35,17 @@ class ConnectivityService {
     }
     if (nowOnline && !_isOnline) {
       // Offline -> Online geçişi
-      UploaderService.instance.syncOnce();
+      // Kullanıcı oturum açmışsa senkronizasyon yap
+      if (Supabase.instance.client.auth.currentUser != null) {
+        if (kDebugMode) {
+          debugPrint('🔄 [Connectivity] Kullanıcı oturum açmış, uploader senkronizasyonu başlatılıyor');
+        }
+        UploaderService.instance.syncOnce();
+      } else {
+        if (kDebugMode) {
+          debugPrint('⏭️ [Connectivity] Kullanıcı oturum açmamış, uploader senkronizasyonu atlanıyor');
+        }
+      }
       AnalysisService.instance.syncOnce();
     }
     _isOnline = nowOnline;
@@ -45,5 +56,3 @@ class ConnectivityService {
     _sub = null;
   }
 }
-
-

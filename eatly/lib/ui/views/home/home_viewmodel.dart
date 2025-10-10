@@ -17,13 +17,50 @@ class HomeViewModel extends BaseViewModel with WidgetsBindingObserver {
   final _authService = locator<AuthService>();
   final _photoService = locator<PhotoService>();
   final MealPhotoService _mealPhotoService = MealPhotoService();
-  final DailySummary todaySummary = DailySummary(
-    date: DateTime.now(),
-    foods: [],
-  );
-
+  
   String? displayName;
   Future<List<MealPhoto>>? _todayMealPhotosFuture;
+  
+  // Günlük özet hesaplaması için metod
+  DailySummary calculateDailySummary(List<MealPhoto> photos) {
+    final today = DateTime.now();
+    final targetCalories = 2000.0;
+    final targetProtein = 150.0;
+    final targetCarbs = 250.0;
+    final targetFat = 65.0;
+    
+    double totalCalories = 0;
+    double totalProtein = 0;
+    double totalCarbs = 0;
+    double totalFat = 0;
+    
+    // Her meal photo'daki detected items'ları topla
+    for (final photo in photos) {
+      for (final item in photo.detectedItems) {
+        final nutrition = item['nutrition'] as Map<String, dynamic>?;
+        if (nutrition != null) {
+          totalCalories += (nutrition['calories'] as num?)?.toDouble() ?? 0;
+          totalProtein += (nutrition['protein'] as num?)?.toDouble() ?? 0;
+          totalCarbs += (nutrition['carbohydrate'] as num?)?.toDouble() ?? 
+                       (nutrition['carbs'] as num?)?.toDouble() ?? 0;
+          totalFat += (nutrition['fat'] as num?)?.toDouble() ?? 0;
+        }
+      }
+    }
+    
+    return DailySummary(
+      date: today,
+      foods: [], // Artık kullanmıyoruz, sadece hesaplama için
+      targetCalories: targetCalories,
+      targetProtein: targetProtein,
+      targetCarbs: targetCarbs,
+      targetFat: targetFat,
+      totalCalories: totalCalories,
+      totalProtein: totalProtein,
+      totalCarbs: totalCarbs,
+      totalFat: totalFat,
+    );
+  }
 
   Future<List<MealPhoto>> get todayMealPhotosFuture {
     _todayMealPhotosFuture ??= loadTodayMealPhotos();
@@ -90,7 +127,7 @@ class HomeViewModel extends BaseViewModel with WidgetsBindingObserver {
       // Uzakta bugünkü en yeni kaydı deleted=true yap (yaklaşık eşleşme)
       await _photoService.markTodayPhotoDeletedApprox();
     } catch (_) {}
-    // Cache'i temizle ve UI'yi yenile
+    // Cache'i temizle ve UI'yi yenile - bu günlük özet değerlerini de güncelleyecek
     _todayMealPhotosFuture = null;
     notifyListeners();
   }

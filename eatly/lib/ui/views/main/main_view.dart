@@ -5,6 +5,7 @@ import '../nutrition/nutrition_view.dart';
 import '../profile/profile_view.dart';
 import '../suggestion/suggestion_view.dart';
 import '../sport/sport_view.dart';
+import '../meal_history/meal_history_view.dart'; // Added import
 import 'main_viewmodel.dart';
 import '../../common/pill_nav_bar.dart';
 
@@ -22,7 +23,7 @@ class MainView extends StatelessWidget {
         });
         final screens = [
           const HomeView(),
-          const NutritionView(),
+          const MealHistoryView(), // Changed from NutritionView to MealHistoryView
           const SuggestionView(),
           const SportView(),
           const ProfileView(),

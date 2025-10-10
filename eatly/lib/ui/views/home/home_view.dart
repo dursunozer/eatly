@@ -63,7 +63,50 @@ class HomeView extends StackedView<HomeViewModel> {
   }
 
   Widget _buildDailySummaryCard(BuildContext context, HomeViewModel viewModel) {
-    final s = viewModel.todaySummary;
+    return FutureBuilder<List<MealPhoto>>(
+      future: viewModel.todayMealPhotosFuture,
+      builder: (context, snapshot) {
+        // Meal photo'lar yüklenene kadar loading göster
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Günlük Özet',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.info_outline),
+                        onPressed: () {},
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  const SizedBox(height: 20),
+                  const Center(
+                    child: Text(
+                      'Besin değerleri hesaplanıyor...',
+                      style: TextStyle(color: AppTheme.textSecondary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        
+        // Meal photo'lar yüklendikten sonra günlük özet değerlerini hesapla
+        final photos = snapshot.data ?? <MealPhoto>[];
+        final s = viewModel.calculateDailySummary(photos);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -85,33 +128,10 @@ class HomeView extends StackedView<HomeViewModel> {
             ),
             const SizedBox(height: 20),
             Center(
-              child: CircularPercentIndicator(
-                radius: 100,
-                lineWidth: 12,
-                percent: s.caloriesProgress.clamp(0, 1),
-                center: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '${s.totalCalories.toInt()}',
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      '/ ${s.targetCalories.toInt()} kcal',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-                progressColor: AppTheme.primaryColor,
-                backgroundColor: Colors.grey.shade200,
-                circularStrokeCap: CircularStrokeCap.round,
+                  child: _AnimatedCircularProgress(
+                    progress: s.caloriesProgress.clamp(0, 1),
+                    totalCalories: s.totalCalories,
+                    targetCalories: s.targetCalories,
               ),
             ),
             const SizedBox(height: 20),
@@ -136,6 +156,8 @@ class HomeView extends StackedView<HomeViewModel> {
           ],
         ),
       ),
+        );
+      },
     );
   }
 
@@ -381,7 +403,7 @@ class _MealRow extends StatelessWidget {
                   Text(
                     photo.isWaitingNetwork
                         ? 'İnternet Bağlantısı Kurulduğunda Analiz Başlayacak'
-                        : 'Fotoğraf Aaliz Ediliyor...',
+                        : 'Fotoğraf Analiz Ediliyor...',
                     style: const TextStyle(color: AppTheme.textSecondary),
                   )
                 else if (photo.detectedItems.isNotEmpty)
@@ -721,6 +743,107 @@ class _MealRow extends StatelessWidget {
     return Container(
       color: Colors.grey.shade200,
       child: Icon(Icons.image, color: Colors.grey),
+    );
+  }
+}
+
+class _AnimatedCircularProgress extends StatefulWidget {
+  final double progress;
+  final double totalCalories;
+  final double targetCalories;
+
+  const _AnimatedCircularProgress({
+    required this.progress,
+    required this.totalCalories,
+    required this.targetCalories,
+  });
+
+  @override
+  State<_AnimatedCircularProgress> createState() => _AnimatedCircularProgressState();
+}
+
+class _AnimatedCircularProgressState extends State<_AnimatedCircularProgress>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    
+    _animation = Tween<double>(
+      begin: 0.0,
+      end: widget.progress,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOutCubic,
+    ));
+
+    // Animasyonu başlat
+    _controller.forward();
+  }
+
+  @override
+  void didUpdateWidget(_AnimatedCircularProgress oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Progress değeri değiştiğinde animasyonu yeniden başlat
+    if (oldWidget.progress != widget.progress) {
+      _animation = Tween<double>(
+        begin: 0.0,
+        end: widget.progress,
+      ).animate(CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOutCubic,
+      ));
+      _controller.reset();
+      _controller.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return CircularPercentIndicator(
+          radius: 100,
+          lineWidth: 12,
+          percent: _animation.value.clamp(0, 1),
+          center: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '${widget.totalCalories.toInt()}',
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              Text(
+                '/ ${widget.targetCalories.toInt()} kcal',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          progressColor: AppTheme.primaryColor,
+          backgroundColor: Colors.grey.shade200,
+          circularStrokeCap: CircularStrokeCap.round,
+        );
+      },
     );
   }
 }

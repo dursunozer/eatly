@@ -64,4 +64,32 @@ class AppPowerSync {
     //   getAuthToken: () async => SupabaseTokenProvider().getAuthToken(),
     // ));
   }
+  
+  /// Clear all local photos from the database
+  Future<void> clearLocalPhotos() async {
+    try {
+      await db.execute('delete from local_photos');
+      if (kDebugMode) {
+        debugPrint('✅ [PowerSync] Tüm yerel fotoğraflar temizlendi');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ [PowerSync] Yerel fotoğraflar temizlenirken hata: $e');
+      }
+    }
+  }
+  
+  /// Mark all local photos as synced to prevent upload attempts
+  Future<void> markAllPhotosAsSynced() async {
+    try {
+      await db.execute('update local_photos set is_synced = 1');
+      if (kDebugMode) {
+        debugPrint('✅ [PowerSync] Tüm yerel fotoğraflar senkronize edildi olarak işaretlendi');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ [PowerSync] Fotoğraflar senkronize edildi olarak işaretlenirken hata: $e');
+      }
+    }
+  }
 }

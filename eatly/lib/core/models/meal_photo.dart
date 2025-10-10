@@ -14,6 +14,7 @@ class MealPhoto {
   final String? userId;
   final bool isAnalyzing;
   final bool isWaitingNetwork;
+  final Map<String, double>? portionSizes; // New field for portion control
 
   const MealPhoto({
     required this.id,
@@ -27,6 +28,7 @@ class MealPhoto {
     this.userId,
     this.isAnalyzing = false,
     this.isWaitingNetwork = false,
+    this.portionSizes, // New parameter
   });
 
   Map<String, dynamic> toJson() => {
@@ -41,6 +43,7 @@ class MealPhoto {
         'user_id': userId,
         'is_analyzing': isAnalyzing,
         'is_waiting_network': isWaitingNetwork,
+        'portion_sizes': portionSizes, // Added to JSON serialization
       };
 
   factory MealPhoto.fromJson(Map<String, dynamic> json) {
@@ -56,6 +59,9 @@ class MealPhoto {
       userId: json['user_id'],
       isAnalyzing: (json['is_analyzing'] as bool?) ?? false,
       isWaitingNetwork: (json['is_waiting_network'] as bool?) ?? false,
+      portionSizes: json['portion_sizes'] != null 
+          ? Map<String, double>.from(json['portion_sizes'] as Map)
+          : null, // Added deserialization
     );
   }
 
@@ -71,6 +77,7 @@ class MealPhoto {
     String? userId,
     bool? isAnalyzing,
     bool? isWaitingNetwork,
+    Map<String, double>? portionSizes, // Added parameter
   }) {
     return MealPhoto(
       id: id ?? this.id,
@@ -84,6 +91,7 @@ class MealPhoto {
       userId: userId ?? this.userId,
       isAnalyzing: isAnalyzing ?? this.isAnalyzing,
       isWaitingNetwork: isWaitingNetwork ?? this.isWaitingNetwork,
+      portionSizes: portionSizes ?? this.portionSizes, // Added to copyWith
     );
   }
 }

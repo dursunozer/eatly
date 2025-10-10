@@ -19,45 +19,80 @@ import 'core/services/analysis_service.dart';
 
 final supabase = Supabase.instance.client;
 
+// Utility function to clear local photos for testing
+Future<void> _clearLocalPhotos() async {
+  try {
+    await AppPowerSync.instance.clearLocalPhotos();
+    if (kDebugMode) {
+      debugPrint('✅ [Utility] Tüm yerel fotoğraflar temizlendi');
+    }
+  } catch (e) {
+    if (kDebugMode) {
+      debugPrint('❌ [Utility] Yerel fotoğraflar temizlenirken hata: $e');
+    }
+  }
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Tarih formatını Türkçe olarak ayarla
+
   await initializeDateFormatting('tr_TR', null);
-  
-  // Supabase'i başlat
+
   await Supabase.initialize(
     url: 'https://rlttyysmwrgpwjexggdg.supabase.co',
     anonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsdHR5eXNtd3JncHdqZXhnZ2RnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTk4MzEsImV4cCI6MjA3MjYzNTgzMX0.iC7UTOc3UqxfeMsibag_43-bp5jhx2JNbSi8fF9pdnU',
   );
-  
-  // Stacked servislerini ayarla
+
   await setupLocator();
   setupDialogUi();
   setupBottomSheetUi();
-  
-  // PowerSync'i web'de devre dışı bırak (wasm/worker kısıtları nedeniyle)
+
   if (!kIsWeb) {
-    // Kullanıcı saat dilimini profiline yaz (ilk çalıştırmada)
     try {
       final tz = await TimezoneService.getLocalTimezone();
       final uid = Supabase.instance.client.auth.currentUser?.id;
       if (uid != null) {
         await ProfileService.upsertProfile(uid: uid, timezone: tz);
       }
-    } catch (_) {
-      // Hata durumunda sessizce devam et
+    } catch (_) {}
+
+    await AppPowerSync.instance.initialize();
+    
+    // Kullanıcı oturum açmışsa uploader servisini başlat
+    if (Supabase.instance.client.auth.currentUser != null) {
+      if (kDebugMode) {
+        debugPrint('▶️ [Main] Kullanıcı oturum açmış, uploader servisi başlatılıyor');
+      }
+      UploaderService.instance.start();
+    } else {
+      if (kDebugMode) {
+        debugPrint('⏭️ [Main] Kullanıcı oturum açmamış, uploader servisi başlatılmıyor');
+      }
     }
     
-    // PowerSync ve diğer servisleri başlat
-    await AppPowerSync.instance.initialize();
-    UploaderService.instance.start();
+    // Oturum durumu değişikliklerini dinle
+    Supabase.instance.client.auth.onAuthStateChange.listen((authState) {
+      if (authState.event == AuthChangeEvent.signedIn) {
+        // Kullanıcı oturum açtıysa uploader servisini başlat
+        if (kDebugMode) {
+          debugPrint('▶️ [Auth] Kullanıcı oturum açtı, uploader servisi başlatılıyor');
+        }
+        UploaderService.instance.start();
+      } else if (authState.event == AuthChangeEvent.signedOut) {
+        // Kullanıcı oturumu kapattıysa uploader servisini durdur
+        if (kDebugMode) {
+          debugPrint('⏹️ [Auth] Kullanıcı oturumu kapattı, uploader servisi durduruluyor');
+        }
+        UploaderService.instance.stop();
+      }
+    });
+    
     DailyCleanupService.instance.start();
     AnalysisService.instance.start();
     await ConnectivityService.instance.start();
   }
-  
+
   runApp(const EatlyApp());
 }
 
@@ -72,9 +107,7 @@ class EatlyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       navigatorKey: StackedService.navigatorKey,
       onGenerateRoute: StackedRouter().onGenerateRoute,
-      navigatorObservers: [
-        StackedService.routeObserver,
-      ],
+      navigatorObservers: [StackedService.routeObserver],
     );
   }
 }
