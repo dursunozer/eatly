@@ -1,4 +1,10 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
 part of 'vision_response.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
 
 VisionApiResponse _$VisionApiResponseFromJson(Map<String, dynamic> json) =>
     VisionApiResponse(

@@ -1,14 +1,21 @@
+// dart format width=80
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+// **************************************************************************
+// StackedDialogGenerator
+// **************************************************************************
+
 import 'package:stacked_services/stacked_services.dart';
+
+import 'app.locator.dart';
 import '../ui/dialogs/info_alert/info_alert_dialog.dart';
 
-enum DialogType {
-  infoAlert,
-}
+enum DialogType { infoAlert }
 
 void setupDialogUi() {
-  final dialogService = DialogService();
+  final dialogService = locator<DialogService>();
 
-  final builders = <DialogType, DialogBuilder>{
+  final Map<DialogType, DialogBuilder> builders = {
     DialogType.infoAlert: (context, request, completer) =>
         InfoAlertDialog(request: request, completer: completer),
   };

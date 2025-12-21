@@ -3,10 +3,83 @@ import '../../../core/services/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/config/policy_config.dart';
 import '../../../app/app.locator.dart';
-// Profil oluşturmayı giriş sonrasına bırakıyoruz; burada kullanmıyoruz
+import '../../../core/services/profile_service.dart';
 
 class SignupViewModel extends BaseViewModel {
   final _authService = locator<AuthService>();
+
+  /// Basitleştirilmiş kayıt - sadece temel bilgiler
+  /// Yaş, kilo, boy gibi bilgiler onboarding'de alınacak
+  Future<String?> signUpSimple({
+    required String email,
+    required String password,
+    required String displayName,
+    required bool kvkkAccepted,
+    required bool healthAccepted,
+  }) async {
+    setBusy(true);
+    try {
+      if (email.trim().isEmpty || password.length < 6) {
+        return 'Geçerli bir e‑posta ve en az 6 haneli şifre girin.';
+      }
+
+      // Kullanıcıyı oluştur
+      final String? uid = await _authService.signUpWithPassword(
+        email: email,
+        password: password,
+        emailRedirectTo: null,
+        metadata: {
+          'display_name': displayName,
+          'kvkk_accepted': kvkkAccepted,
+          'healthdata_accepted': healthAccepted,
+          'policy_version': PolicyConfig.policyVersion,
+        },
+      );
+
+      if (uid == null) {
+        return 'Kullanıcı oluşturulamadı. Lütfen tekrar deneyin.';
+      }
+
+      // Profil kaydı oluştur
+      try {
+        await ProfileService.upsertProfile(
+          uid: uid,
+          displayName: displayName,
+        );
+      } catch (e) {
+        // Profil kaydı başarısız olsa bile devam et
+        // Onboarding'de tekrar denenecek
+      }
+
+      // KVKK ve sağlık verisi açık rızalarını kaydet
+      try {
+        final client = Supabase.instance.client;
+        await client.from('user_consents').insert({
+          'user_id': uid,
+          'kvkk_accepted': kvkkAccepted,
+          'healthdata_accepted': healthAccepted,
+          'policy_version': PolicyConfig.policyVersion,
+          'accepted_at': DateTime.now().toUtc().toIso8601String(),
+        });
+      } catch (e) {
+        // Onay kaydı zorunlu değilse sessiz devam
+      }
+
+      return null;
+    } on AuthException catch (e) {
+      final msg = (e.message ?? '').toLowerCase();
+      if (msg.contains('already') || msg.contains('registered') || msg.contains('exists')) {
+        return 'Bu e‑posta zaten kayıtlı. Lütfen giriş yapın.';
+      }
+      return e.message;
+    } catch (e) {
+      return 'Kayıt başarısız: $e';
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /// Eski detaylı kayıt metodu (geriye dönük uyumluluk için)
   Future<String?> signUpExtended({
     required String email,
     required String password,
@@ -20,60 +93,12 @@ class SignupViewModel extends BaseViewModel {
     required bool kvkkAccepted,
     required bool healthAccepted,
   }) async {
-    setBusy(true);
-    try {
-      if (email.trim().isEmpty || password.length < 6) {
-        return 'Geçerli bir e‑posta ve en az 6 haneli şifre girin.';
-      }
-
-      // Kullanıcıyı oluştur (e‑posta doğrulaması gerektiren projelerde
-      // burada oturum açmaya çalışmayacağız)
-      final String? uid = await _authService.signUpWithPassword(
-        email: email,
-        password: password,
-        emailRedirectTo: null,
-        metadata: {
-          'display_name': displayName,
-          if (age != null) 'age': age,
-          if (weight != null) 'weight': weight,
-          if (height != null) 'height': height,
-          if (gender != null) 'gender': gender,
-          if (waistCm != null) 'waist_cm': waistCm,
-          if (hipCm != null) 'hip_cm': hipCm,
-          // Onaylar: ilk oturum yoksa RLS nedeniyle insert düşebilir; metadata yedek olarak tutulur
-          'kvkk_accepted': kvkkAccepted,
-          'healthdata_accepted': healthAccepted,
-          'policy_version': PolicyConfig.policyVersion,
-        },
-      );
-      // Bu aşamada profil upsert etmiyoruz; giriş sonrası (email onaylandıktan sonra)
-      // profil ekranı açıldığında eksikse oluşturulacak.
-      if (uid == null) return 'Kullanıcı oluşturulamadı. Lütfen tekrar deneyin.';
-
-      // KVKK ve sağlık verisi açık rızalarını kaydet
-      try {
-        final client = Supabase.instance.client;
-        await client.from('user_consents').insert({
-          'user_id': client.auth.currentUser?.id ?? uid,
-          'kvkk_accepted': kvkkAccepted,
-          'healthdata_accepted': healthAccepted,
-          'policy_version': PolicyConfig.policyVersion,
-          'accepted_at': DateTime.now().toUtc().toIso8601String(),
-        });
-      } catch (e) {
-        // Onay kaydı zorunlu değilse sessiz devam; ancak istenirse hata döndürülebilir
-      }
-      return null;
-    } on AuthException catch (e) {
-      final msg = (e.message ?? '').toLowerCase();
-      if (msg.contains('already') || msg.contains('registered') || msg.contains('exists')) {
-        return 'Bu e‑posta zaten kayıtlı. Lütfen giriş yapın veya "Şifremi unuttum" seçeneğini kullanın.';
-      }
-      return e.message;
-    } catch (e) {
-      return 'Profil kaydı başarısız: $e';
-    } finally {
-      setBusy(false);
-    }
+    return signUpSimple(
+      email: email,
+      password: password,
+      displayName: displayName,
+      kvkkAccepted: kvkkAccepted,
+      healthAccepted: healthAccepted,
+    );
   }
 }

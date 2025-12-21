@@ -1,4 +1,10 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
 part of 'vision_request.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
 
 VisionApiRequest _$VisionApiRequestFromJson(Map<String, dynamic> json) =>
     VisionApiRequest(

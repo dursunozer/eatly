@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
+	<!-- HealthKit İzinleri -->
+	<key>NSHealthShareUsageDescription</key>
+	<string>Eatly, adım sayınızı, yakılan kalorileri ve uyku verilerinizi takip etmek için sağlık verilerinize erişmek istiyor.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Eatly, egzersiz verilerinizi kaydetmek için sağlık verilerinize yazmak istiyor.</string>
 </dict>
 </plist>

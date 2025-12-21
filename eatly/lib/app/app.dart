@@ -12,8 +12,14 @@ import '../ui/views/camera/camera_view.dart';
 import '../ui/views/nutrition/nutrition_view.dart';
 import '../ui/views/profile/profile_view.dart';
 import '../ui/views/sport/sport_view.dart';
+import '../ui/views/sport/workout_timer_view.dart';
+import '../ui/views/sport/workout_programs_view.dart';
+import '../ui/views/sport/sport_stats_view.dart';
+import '../ui/views/sport/achievements_view.dart';
 import '../ui/views/suggestion/suggestion_view.dart';
 import '../ui/views/startup/startup_view.dart';
+import '../ui/views/onboarding/onboarding_view.dart';
+import '../ui/views/welcome/welcome_view.dart';
 
 // Bottom Sheets
 import '../ui/bottom_sheets/notice/notice_sheet.dart';
@@ -38,16 +44,22 @@ import '../core/services/huggingface_service.dart';
 @StackedApp(
   routes: [
     MaterialRoute(page: StartupView, initial: true),
+    MaterialRoute(page: WelcomeView),
     MaterialRoute(page: LoginView),
     MaterialRoute(page: SignupView),
     MaterialRoute(page: ForgotPasswordView),
     MaterialRoute(page: ConsentUpdateView),
+    MaterialRoute(page: OnboardingView),
     MaterialRoute(page: MainView),
     MaterialRoute(page: HomeView),
     MaterialRoute(page: CameraView),
     MaterialRoute(page: NutritionView),
     MaterialRoute(page: ProfileView),
     MaterialRoute(page: SportView),
+    MaterialRoute(page: WorkoutTimerView),
+    MaterialRoute(page: WorkoutProgramsView),
+    MaterialRoute(page: SportStatsView),
+    MaterialRoute(page: AchievementsView),
     MaterialRoute(page: SuggestionView),
   ],
   dependencies: [

@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:stacked/stacked.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import '../../../core/config/policy_config.dart';
+import '../../../core/theme/app_theme.dart';
+import '../onboarding/onboarding_view.dart';
 import 'signup_viewmodel.dart';
 
 class SignupView extends StatefulWidget {
@@ -17,12 +19,6 @@ class _SignupViewState extends State<SignupView> {
   late final TextEditingController _password;
   late final TextEditingController _passwordConfirm;
   late final TextEditingController _name;
-  late final TextEditingController _age;
-  late final TextEditingController _weight;
-  late final TextEditingController _height;
-  late final TextEditingController _waist;
-  late final TextEditingController _hip;
-  String _gender = 'Erkek';
   bool _acceptKvkk = false;
   bool _acceptHealth = false;
   bool _obscurePassword = true;
@@ -35,11 +31,6 @@ class _SignupViewState extends State<SignupView> {
     _password = TextEditingController();
     _passwordConfirm = TextEditingController();
     _name = TextEditingController();
-    _age = TextEditingController();
-    _weight = TextEditingController();
-    _height = TextEditingController();
-    _waist = TextEditingController();
-    _hip = TextEditingController();
   }
 
   @override
@@ -48,11 +39,6 @@ class _SignupViewState extends State<SignupView> {
     _password.dispose();
     _passwordConfirm.dispose();
     _name.dispose();
-    _age.dispose();
-    _weight.dispose();
-    _height.dispose();
-    _waist.dispose();
-    _hip.dispose();
     super.dispose();
   }
 
@@ -62,15 +48,45 @@ class _SignupViewState extends State<SignupView> {
       viewModelBuilder: () => SignupViewModel(),
       builder: (context, viewModel, child) {
         return Scaffold(
-          appBar: AppBar(title: const Text('Kayıt Ol')),
-          body: Padding(
-            padding: const EdgeInsets.all(16),
+          backgroundColor: AppTheme.backgroundColor,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios, color: AppTheme.textPrimary),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+          body: SafeArea(
             child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextField(
+                  // Başlık
+                  const Text(
+                    'Hesap Oluştur',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Sağlıklı beslenme yolculuğuna başla',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Ad Soyad
+                  _buildInputField(
                     controller: _name,
-                    decoration: const InputDecoration(labelText: 'Ad Soyad'),
+                    label: 'Ad Soyad',
+                    icon: Icons.person_outline,
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(
                         RegExp(r"[a-zA-ZğüşöçıİĞÜŞÖÇ ]"),
@@ -78,10 +94,13 @@ class _SignupViewState extends State<SignupView> {
                     ],
                     textCapitalization: TextCapitalization.words,
                   ),
-                  const SizedBox(height: 8),
-                  TextField(
+                  const SizedBox(height: 16),
+
+                  // E-posta
+                  _buildInputField(
                     controller: _email,
-                    decoration: const InputDecoration(labelText: 'E-posta'),
+                    label: 'E-posta',
+                    icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(
@@ -89,233 +108,122 @@ class _SignupViewState extends State<SignupView> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  TextField(
+                  const SizedBox(height: 16),
+
+                  // Şifre
+                  _buildInputField(
                     controller: _password,
-                    decoration: InputDecoration(
-                      labelText: 'Şifre',
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
-                        onPressed: () => setState(
-                          () => _obscurePassword = !_obscurePassword,
-                        ),
-                      ),
-                    ),
+                    label: 'Şifre',
+                    icon: Icons.lock_outline,
                     obscureText: _obscurePassword,
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _passwordConfirm,
-                    decoration: InputDecoration(
-                      labelText: 'Şifrenizi tekrar girin',
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePasswordConfirm
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
-                        onPressed: () => setState(
-                          () => _obscurePasswordConfirm =
-                              !_obscurePasswordConfirm,
-                        ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        color: AppTheme.textSecondary,
                       ),
-                    ),
-                    obscureText: _obscurePasswordConfirm,
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _age,
-                    decoration: const InputDecoration(labelText: 'Yaş'),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _weight,
-                    decoration: const InputDecoration(labelText: 'Kilo (kg)'),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _height,
-                    decoration: const InputDecoration(labelText: 'Boy (cm)'),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _waist,
-                    decoration: const InputDecoration(
-                      labelText: 'Bel çevresi (cm)',
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _hip,
-                    decoration: const InputDecoration(
-                      labelText: 'Kalça çevresi (cm)',
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  ),
-                  const SizedBox(height: 8),
-                  _BmiPreview(heightCtrl: _height, weightCtrl: _weight),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    value: _gender,
-                    items: const [
-                      DropdownMenuItem(value: 'Erkek', child: Text('Erkek')),
-                      DropdownMenuItem(value: 'Kadın', child: Text('Kadın')),
-                    ],
-                    onChanged: (v) => setState(() => _gender = v ?? 'Erkek'),
-                    decoration: const InputDecoration(labelText: 'Cinsiyet'),
-                  ),
-                  const SizedBox(height: 12),
-                  CheckboxListTile(
-                    value: _acceptKvkk,
-                    onChanged: (v) => setState(() => _acceptKvkk = v ?? false),
-                    controlAffinity: ListTileControlAffinity.leading,
-                    title: const Text(
-                      'KVKK ve Gizlilik Politikası\'nı okudum, anladım ve kabul ediyorum.',
-                    ),
-                    subtitle: const Text(
-                      'Devam ederek verilerinizin işlenmesine ilişkin aydınlatma metnini kabul etmiş olursunuz.',
-                      style: TextStyle(color: Colors.grey),
+                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
-                  CheckboxListTile(
-                    value: _acceptHealth,
-                    onChanged: (v) =>
-                        setState(() => _acceptHealth = v ?? false),
-                    controlAffinity: ListTileControlAffinity.leading,
-                    title: const Text(
-                      'Sağlık verilerimin beslenme takibi amacıyla işlenmesine açık rıza veriyorum.',
-                    ),
-                    subtitle: const Text(
-                      'Bu onay, boy/kilo vb. özel nitelikli veriler için gereklidir.',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 8,
-                      children: [
-                        //Text(
-                        //  'Politika sürümü: ${PolicyConfig.policyVersion}',
-                        //  style: const TextStyle(color: Colors.grey),
-                        //),
-                        TextButton(
-                          onPressed: () async {
-                            final ok = await launchUrlString(
-                              PolicyConfig.policyUrl,
-                              mode: LaunchMode.externalApplication,
-                            );
-                            if (!ok && mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Politika açılırken bir sorun oluştu.',
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-                          child: const Text(
-                            'KVKK ve Gizlilik Politikasını oku',
-                          ),
-                        ),
-                      ],
+                  const SizedBox(height: 8),
+                  Text(
+                    'En az 8 karakter, 1 büyük harf ve 1 özel karakter',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: viewModel.isBusy
-                        ? null
-                        : () async {
-                            final strong2 = RegExp(
-                              r'^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$',
-                            );
-                            if (!strong2.hasMatch(_password.text)) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Şifre en az 8 hane, 1 büyük harf ve 1 özel karakter içermeli.',
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-                            if (_password.text != _passwordConfirm.text) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Girilen şifreler uyuşmuyor.'),
-                                ),
-                              );
-                              return;
-                            }
-                            if (!_acceptKvkk) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Devam etmek için KVKK ve Gizlilik onaylarını kabul etmelisiniz.',
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-                            if (!_acceptHealth) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Devam etmek için sağlık verisi açık rızasını vermelisiniz.',
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-                            final err = await viewModel.signUpExtended(
-                              email: _email.text,
-                              password: _password.text,
-                              displayName: _name.text,
-                              age: int.tryParse(_age.text),
-                              weight: double.tryParse(_weight.text),
-                              height: double.tryParse(_height.text),
-                              gender: _gender,
-                              waistCm: double.tryParse(_waist.text),
-                              hipCm: double.tryParse(_hip.text),
-                              kvkkAccepted: _acceptKvkk,
-                              healthAccepted: _acceptHealth,
-                            );
-                            if (!mounted) return;
-                            if (err == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Kayıt başarılı.'),
-                                ),
-                              );
-                              Navigator.pop(context);
-                            } else {
-                              ScaffoldMessenger.of(
-                                context,
-                              ).showSnackBar(SnackBar(content: Text(err)));
-                            }
-                          },
-                    child: viewModel.isBusy
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Kayıt Ol'),
+
+                  // Şifre Tekrar
+                  _buildInputField(
+                    controller: _passwordConfirm,
+                    label: 'Şifre Tekrar',
+                    icon: Icons.lock_outline,
+                    obscureText: _obscurePasswordConfirm,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePasswordConfirm ? Icons.visibility_off : Icons.visibility,
+                        color: AppTheme.textSecondary,
+                      ),
+                      onPressed: () => setState(() => _obscurePasswordConfirm = !_obscurePasswordConfirm),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // KVKK Onayı
+                  _buildCheckbox(
+                    value: _acceptKvkk,
+                    onChanged: (v) => setState(() => _acceptKvkk = v ?? false),
+                    title: 'KVKK ve Gizlilik Politikası\'nı kabul ediyorum',
+                    onTapLink: () async {
+                      await launchUrlString(
+                        PolicyConfig.policyUrl,
+                        mode: LaunchMode.externalApplication,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Sağlık Verisi Onayı
+                  _buildCheckbox(
+                    value: _acceptHealth,
+                    onChanged: (v) => setState(() => _acceptHealth = v ?? false),
+                    title: 'Sağlık verilerimin işlenmesine onay veriyorum',
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Kayıt Ol Butonu
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: viewModel.isBusy ? null : () => _handleSignup(viewModel),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: viewModel.isBusy
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              'Devam Et',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Giriş Yap Linki
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Zaten hesabın var mı? ',
+                        style: TextStyle(color: AppTheme.textSecondary),
+                      ),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Text(
+                          'Giriş Yap',
+                          style: TextStyle(
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -325,51 +233,152 @@ class _SignupViewState extends State<SignupView> {
       },
     );
   }
-}
 
-class _BmiPreview extends StatefulWidget {
-  const _BmiPreview({required this.heightCtrl, required this.weightCtrl});
-  final TextEditingController heightCtrl;
-  final TextEditingController weightCtrl;
-  @override
-  State<_BmiPreview> createState() => _BmiPreviewState();
-}
-
-class _BmiPreviewState extends State<_BmiPreview> {
-  double? _bmi;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.heightCtrl.addListener(_recalc);
-    widget.weightCtrl.addListener(_recalc);
-    _recalc();
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    TextCapitalization textCapitalization = TextCapitalization.none,
+    bool obscureText = false,
+    Widget? suffixIcon,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
+        textCapitalization: textCapitalization,
+        obscureText: obscureText,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, color: AppTheme.primaryColor),
+          suffixIcon: suffixIcon,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+      ),
+    );
   }
 
-  @override
-  void dispose() {
-    widget.heightCtrl.removeListener(_recalc);
-    widget.weightCtrl.removeListener(_recalc);
-    super.dispose();
+  Widget _buildCheckbox({
+    required bool value,
+    required Function(bool?) onChanged,
+    required String title,
+    VoidCallback? onTapLink,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: Checkbox(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppTheme.primaryColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: GestureDetector(
+            onTap: onTapLink,
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppTheme.textSecondary,
+                decoration: onTapLink != null ? TextDecoration.underline : null,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
-  void _recalc() {
-    final h = double.tryParse(widget.heightCtrl.text);
-    final w = double.tryParse(widget.weightCtrl.text);
-    double? bmi;
-    if (h != null && h > 0 && w != null && w > 0) {
-      final m = h / 100.0;
-      bmi = w / (m * m);
+  Future<void> _handleSignup(SignupViewModel viewModel) async {
+    // Validasyonlar
+    if (_name.text.trim().isEmpty) {
+      _showError('Lütfen adınızı girin');
+      return;
     }
-    setState(() => _bmi = bmi);
+
+    if (_email.text.trim().isEmpty) {
+      _showError('Lütfen e-posta adresinizi girin');
+      return;
+    }
+
+    final strongPassword = RegExp(r'^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$');
+    if (!strongPassword.hasMatch(_password.text)) {
+      _showError('Şifre en az 8 karakter, 1 büyük harf ve 1 özel karakter içermeli');
+      return;
+    }
+
+    if (_password.text != _passwordConfirm.text) {
+      _showError('Şifreler uyuşmuyor');
+      return;
+    }
+
+    if (!_acceptKvkk) {
+      _showError('KVKK ve Gizlilik Politikası\'nı kabul etmelisiniz');
+      return;
+    }
+
+    if (!_acceptHealth) {
+      _showError('Sağlık verisi işleme onayı gereklidir');
+      return;
+    }
+
+    // Kayıt işlemi
+    final error = await viewModel.signUpSimple(
+      email: _email.text.trim(),
+      password: _password.text,
+      displayName: _name.text.trim(),
+      kvkkAccepted: _acceptKvkk,
+      healthAccepted: _acceptHealth,
+    );
+
+    if (!mounted) return;
+
+    if (error == null) {
+      // Kayıt başarılı - Onboarding'e yönlendir
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const OnboardingView()),
+      );
+    } else {
+      _showError(error);
+    }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final text = _bmi == null ? 'BKİ: -' : 'BKİ: ${_bmi!.toStringAsFixed(1)}';
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(text, style: const TextStyle(color: Colors.grey)),
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
     );
   }
 }

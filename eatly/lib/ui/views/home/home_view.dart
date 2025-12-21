@@ -15,7 +15,7 @@ class HomeView extends StackedView<HomeViewModel> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 40, 16, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -24,6 +24,7 @@ class HomeView extends StackedView<HomeViewModel> {
             _buildDailySummaryCard(context, viewModel),
             const SizedBox(height: 20),
             _buildRecentMeals(viewModel),
+            const SizedBox(height: 60), // Navbar için boşluk (azaltıldı)
           ],
         ),
       ),

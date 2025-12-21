@@ -1,17 +1,27 @@
+// dart format width=80
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+// **************************************************************************
+// StackedBottomsheetGenerator
+// **************************************************************************
+
 import 'package:stacked_services/stacked_services.dart';
-import '../ui/bottom_sheets/notice/notice_sheet.dart';
+
+import 'app.locator.dart';
 import '../ui/bottom_sheets/analysis_results/analysis_results_sheet.dart';
-import 'app.dart';
+import '../ui/bottom_sheets/notice/notice_sheet.dart';
+
+enum BottomSheetType { notice, analysisResults }
 
 void setupBottomSheetUi() {
-  final bottomSheetService = BottomSheetService();
+  final bottomsheetService = locator<BottomSheetService>();
 
-  final builders = <BottomSheetType, SheetBuilder>{
+  final Map<BottomSheetType, SheetBuilder> builders = {
     BottomSheetType.notice: (context, request, completer) =>
-        NoticeSheet(completer: completer, request: request),
+        NoticeSheet(request: request, completer: completer),
     BottomSheetType.analysisResults: (context, request, completer) =>
-        AnalysisResultsSheet(completer: completer, request: request),
+        AnalysisResultsSheet(request: request, completer: completer),
   };
 
-  bottomSheetService.setCustomSheetBuilders(builders);
+  bottomsheetService.setCustomSheetBuilders(builders);
 }

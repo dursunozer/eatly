@@ -1,11 +1,28 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/daily_summary.dart';
 import '../models/meal_photo.dart';
+import '../models/user_profile.dart';
 import 'meal_photo_service.dart';
+import 'profile_service.dart';
 
 class HistoryService {
   final SupabaseClient _client = Supabase.instance.client;
   final MealPhotoService _mealPhotoService = MealPhotoService();
+  
+  // Kullanıcı profili cache
+  UserProfile? _cachedProfile;
+  
+  /// Kullanıcı profilini getir (cache'li)
+  Future<UserProfile?> _getUserProfile() async {
+    if (_cachedProfile != null) return _cachedProfile;
+    _cachedProfile = await ProfileService.getCurrentUserProfile();
+    return _cachedProfile;
+  }
+  
+  /// Cache'i temizle (profil güncellendiğinde çağrılmalı)
+  void clearProfileCache() {
+    _cachedProfile = null;
+  }
 
   /// Belirli bir tarihteki meal photo'ları getir
   Future<List<MealPhoto>> getMealPhotosForDate(DateTime date) async {
@@ -68,6 +85,13 @@ class HistoryService {
   /// Belirli bir tarih için günlük özet hesapla
   Future<DailySummary> getDailySummaryForDate(DateTime date) async {
     final photos = await getMealPhotosForDate(date);
+    
+    // Kullanıcı profilinden hedef değerleri al
+    final profile = await _getUserProfile();
+    final targetCalories = profile?.effectiveTargetCalories ?? 2000;
+    final targetProtein = profile?.effectiveTargetProtein ?? 150;
+    final targetCarbs = profile?.effectiveTargetCarbs ?? 250;
+    final targetFat = profile?.effectiveTargetFat ?? 65;
     
     double totalCalories = 0;
     double totalProtein = 0;
@@ -149,10 +173,10 @@ class HistoryService {
     return DailySummary(
       date: date,
       foods: [], // Artık kullanmıyoruz
-      targetCalories: 2000,
-      targetProtein: 150,
-      targetCarbs: 250,
-      targetFat: 65,
+      targetCalories: targetCalories,
+      targetProtein: targetProtein,
+      targetCarbs: targetCarbs,
+      targetFat: targetFat,
       totalCalories: totalCalories,
       totalProtein: totalProtein,
       totalCarbs: totalCarbs,

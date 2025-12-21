@@ -2,7 +2,6 @@ import 'package:stacked/stacked.dart';
 import 'package:stacked_services/stacked_services.dart';
 import '../../../app/app.locator.dart';
 import '../../../app/app.router.dart';
-import '../camera/camera_view.dart';
 import '../../views/login/consent_update_view.dart';
 import '../../../core/services/consent_service.dart';
 
@@ -18,7 +17,7 @@ class MainViewModel extends BaseViewModel {
   }
 
   Future<void> goToCamera() async {
-    final result = await _nav.navigateToCameraScreen();
+    final result = await _nav.navigateToCameraView();
     // Kamera sayfasından sonuç dönerse ana sayfaya dön
     if (result != null) {
       // Giriş (Home) sekmesine dön

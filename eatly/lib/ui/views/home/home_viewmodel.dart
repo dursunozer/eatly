@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import '../../../core/models/daily_summary.dart';
+import '../../../core/models/user_profile.dart';
 import '../../../core/services/profile_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/photo_service.dart';
@@ -21,13 +21,18 @@ class HomeViewModel extends BaseViewModel with WidgetsBindingObserver {
   String? displayName;
   Future<List<MealPhoto>>? _todayMealPhotosFuture;
   
+  // Kullanıcı profili cache
+  UserProfile? _userProfile;
+  
   // Günlük özet hesaplaması için metod
   DailySummary calculateDailySummary(List<MealPhoto> photos) {
     final today = DateTime.now();
-    final targetCalories = 2000.0;
-    final targetProtein = 150.0;
-    final targetCarbs = 250.0;
-    final targetFat = 65.0;
+    
+    // Kullanıcı profilinden hedef değerleri al (varsayılan değerler ile)
+    final targetCalories = _userProfile?.effectiveTargetCalories ?? 2000.0;
+    final targetProtein = _userProfile?.effectiveTargetProtein ?? 150.0;
+    final targetCarbs = _userProfile?.effectiveTargetCarbs ?? 250.0;
+    final targetFat = _userProfile?.effectiveTargetFat ?? 65.0;
     
     double totalCalories = 0;
     double totalProtein = 0;
@@ -94,6 +99,11 @@ class HomeViewModel extends BaseViewModel with WidgetsBindingObserver {
         final profile = await ProfileService.fetchProfile(uid);
         final name = (profile?['display_name'] as String?)?.trim();
         displayName = (name != null && name.isNotEmpty) ? name : null;
+        
+        // Kullanıcı profili hedef değerleri için
+        if (profile != null) {
+          _userProfile = UserProfile.fromJson(profile);
+        }
       }
     } catch (_) {
       // ignore

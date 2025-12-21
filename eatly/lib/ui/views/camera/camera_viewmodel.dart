@@ -156,6 +156,9 @@ class CameraViewModel extends BaseViewModel {
     try {
       final fat = FatSecretService();
       final Map<String, dynamic> fs = await fat.recognizeImage(imageBytes: bytes);
+      // Debug: FatSecret API yanıtını logla
+      debugPrint('🔑 [FatSecret] Response keys: ${fs.keys.toList()}');
+      debugPrint('🔑 [FatSecret] Full response: $fs');
       final List<Map<String, dynamic>> detected = _extractDetectedItemsFromFatSecret(fs);
       await _mealPhotoService.updateDetectedItems(id: tempId, detectedItems: detected);
       debugPrint('✅ Analiz tamamlandı: ${detected.length} öğe');
@@ -221,6 +224,14 @@ class CameraViewModel extends BaseViewModel {
         tryList(fs['predictions']) ??
         tryList(fs['results']) ??
         tryList(fs['food_response']);
+    
+    // Debug: Bulunan öğe sayısını logla
+    debugPrint('🔍 [FatSecret] Items found: ${items?.length ?? 0}');
+    if (items == null) {
+      debugPrint('⚠️ [FatSecret] No items found in keys: recognized_foods, predictions, results, food_response');
+      debugPrint('⚠️ [FatSecret] Available keys: ${fs.keys.toList()}');
+    }
+    
     if (items != null) {
       for (final raw in items) {
         final m = tryMap(raw) ?? const {};
