@@ -1,99 +1,205 @@
-# Eatly – Kişisel Sağlık ve Beslenme Takip Uygulaması
+# Eatly – Personal Health and Nutrition Tracker
 
-Eatly, kullanıcıların sağlıklı yaşam hedeflerine ulaşmalarına yardımcı olmak için tasarlanmış kapsamlı bir **mobil sağlık ve beslenme takip uygulamasıdır**. Flutter ve Supabase teknolojileri kullanılarak geliştirilen uygulama; öğünleri fotoğraflayarak analiz edebilme, günlük beslenme ve su tüketimini izleme, spor aktivitelerini kaydetme, kalori ihtiyacını hesaplama ve kişiselleştirilmiş öneriler sunma gibi birçok özelliği bir araya getirir. Proje, FastAPI ve Hugging Face modelleri üzerine kurulmuş bir görsel analiz servisini de içerir .
+[🇹🇷 Türkçe README](README.tr.md)
 
-## Proje Hakkında
+Eatly is a mobile health and nutrition tracking application designed to help users build healthier habits. The app combines meal tracking, food photo analysis, water intake tracking, sports activity logging, calorie calculations, and personalized nutrition suggestions in a single Flutter-based mobile experience.
 
-Eatly’nin amacı, kullanıcıların **daha bilinçli beslenmelerini ve aktif kalmalarını** kolaylaştırmaktır. Uygulama, Supabase ile bulut tarafında kimlik doğrulama ve veri yönetimi sağlayarak çevrimdışı senkronizasyona olanak tanır. Uygulamanın çekirdeğinde çok sayıda servis (beslenme, spor, analiz, görüntü işleme, su takibi vb.) bulunur. Bu servisler, kullanıcıların günlük aktivitelerini kaydetmesini, kalorilerini otomatik olarak hesaplamasını ve kişisel hedeflerine göre tavsiyeler almasını sağlar .
+The project includes a Flutter mobile application and a separate FastAPI-based vision backend that can analyze food images and return labels or detected objects through an API endpoint.
 
-## Temel Özellikler
+## About the Project
 
-- **Kullanıcı Girişi ve Kayıt:** Uygulama, Supabase kimlik doğrulaması ile güvenli şekilde hesap oluşturma, oturum açma ve şifre sıfırlama imkânı sunar. Onboarding ve başlangıç ekranları sayesinde yeni kullanıcılar için rehberlik sağlar.
+Eatly focuses on making daily health tracking easier and more practical. Users can record meals, track calories and macronutrients, monitor their water intake, log workouts, and review daily or weekly progress. The application uses a service-based architecture with Supabase integration for authentication and data management.
 
-- **Yemek Fotoğraf Analizi:** Eatly Vision Backend, FastAPI üzerine kuruludur ve `/api/vision/analyze` uç noktası ile gelen resim verilerini etiketleme veya nesne algılama işlemleri yapar; `features` parametresi ile **labels** ve/veya **objects** sonucu döndürür, `threshold` parametresi ile güven eşik değeri ayarlanabilir. Servis, Docker üzerinden çalıştırılabilir ve Hugging Face Spaces üzerinde GPU donanımla dağıtılabilir.
+The project is suitable for demonstrating mobile app development, backend integration, API usage, image analysis, user authentication, and health-related data tracking.
 
-- **Beslenme Takibi:** Kullanıcılar öğünlerini uygulamaya ekleyebilir. Örneğin örnek servis kodu yumurta ve ekmek gibi yiyecekleri porsiyon, kalori, protein, karbonhidrat ve yağ bilgileriy­le beraber kaydetmektedir. Uygulama, gün içinde alınan toplam kalori ve makro besinleri toplayarak günlük özet oluşturur ve kullanıcının hedef değerleri ile karşılaştırır. Beslenme önerileri (örneğin “Günde en az 2 litre su için” ve “Renkli sebze ve meyveler tercih edin”) servis aracılığıyla gösterilir .
+## Features
 
-- **Kalori ve BMR/TDEE Hesaplama:** Uygulama, kullanıcının yaş, cinsiyet, boy ve kilo bilgilerine göre **Harris‑Benedict** formülü ile bazal metabolizma hızını (BMR) hesaplar ve aktivite seviyesine göre toplam günlük enerji ihtiyacını (TDEE) belirler. Sedanter, hafif aktif, orta derecede aktif ve çok aktif seçenekleri desteklenir.
+- **User Authentication**
+  - Sign up and login flow
+  - Password reset support
+  - Onboarding and startup screens
 
-- **Spor Aktiviteleri:** Koşu, yürüyüş, bisiklet, yüzme, HIIT, yoga ve serbest antrenman gibi birçok aktivite tipi desteklenir. `addActivity` fonksiyonu aktivitenin adı, süresi ve tarihini alır; kalori hesabı _running = 10 kcal/dk, walking = 4 kcal/dk, cycling = 7 kcal/dk, swimming = 8 kcal/dk, workout = 6 kcal/dk, yoga = 3 kcal/dk, hiit = 12 kcal/dk, other = 5 kcal/dk_ katsayılarına göre otomatik yapılır . Kullanıcılar önceki aktivitelerini görüntüleyebilir veya silebilir.
+- **Meal and Nutrition Tracking**
+  - Add food items with portion information
+  - Track calories, protein, carbohydrates, fat, fiber, vitamins, and minerals
+  - Generate daily nutrition summaries
+  - Compare daily totals with target calorie and macro goals
 
-- **Su Tüketimi ve Hedefler:** Uygulama, günlük su tüketimini mililitre cinsinden kaydeder ve toplam miktarı hesaplar. Ayrıca kişisel günlük hedef belirleme ve su hedefini güncelleme özellikleri vardır. Haftalık su verileri de analiz edilerek kullanıcının ilerlemesini gösterir.
+- **Food Photo Analysis**
+  - Analyze food photos with a FastAPI vision backend
+  - Supports image-byte upload through `/api/vision/analyze`
+  - Optional query parameters such as `features=labels,objects` and `threshold`
+  - Can be deployed with Docker and Hugging Face Spaces
 
-- **Analiz ve Öneriler:** `AnalysisService`, telefonun yerel deposunda bekleyen fotoğrafları düzenli aralıklarla analiz etmek için FatSecret ve Hugging Face servislerini kullanır; tanınan gıdaların besin değerlerini çıkarır ve uygulama arayüzüne gönderir .
+- **Calorie and Energy Calculations**
+  - Calculate BMR using user profile data
+  - Estimate TDEE according to activity level
+  - Support different health goals such as weight loss, maintenance, and muscle gain
 
-- **İstatistikler ve Başarımlar:** Günlük/haftalık özet ekranları sayesinde kalori alımı, makro besin dağılımı, su tüketimi ve spor aktiviteleri grafiklerle görselleştirilir. Ayrıca kullanıcıların hedeflerine ulaştıklarında rozetler ve başarımlar kazanabilecekleri bir sistem planlanmıştır.
+- **Sports Activity Tracking**
+  - Log activities such as running, walking, cycling, swimming, workout, yoga, HIIT, and other exercises
+  - Estimate burned calories based on activity type and duration
+  - Store activity history and retrieve recent or daily activities
 
-- **Çoklu Dil ve Temalar:** Uygulama çoklu dil desteğine sahiptir ve hem açık hem koyu tema ile kullanılabilir. Stacked mimarisi ve servis yönelimli yapı ile modüler tasarlanmıştır.
+- **Water Intake Tracking**
+  - Add daily water intake in milliliters
+  - Set and update daily water goals
+  - View daily and weekly water consumption data
 
-## Kurulum
+- **Insights and Suggestions**
+  - Nutrition tips and healthy habit suggestions
+  - Daily and weekly summary screens
+  - Planned achievement and progress tracking features
 
-### Mobil Uygulama
+- **Modern Mobile Architecture**
+  - Flutter and Dart frontend
+  - Supabase backend integration
+  - Service-based code organization
+  - Offline/sync-oriented service structure
 
-1. Flutter SDK ve Android/iOS geliştirme ortamını kurun. Ayrıntılar için [Flutter resmi belgelerine](https://docs.flutter.dev/get-started/install) bakabilirsiniz.
-2. Depoyu yerel makinenize klonlayın:
-   ```bash
-   git clone https://github.com/dursunozer/eatly.git
-   cd eatly/eatly
-   ```
-3. Proje bağımlılıklarını yükleyin:
-   ```bash
-   flutter pub get
-   ```
-4. Supabase projesi oluşturun ve `lib/core/config` altında kullanılan API URL ve anon anahtarlarını kendi değerlerinizle güncelleyin. Ayrıca uygulama için **Hugging Face** API anahtarları veya FatSecret API bilgilerini `.env` dosyasına eklemeniz gerekebilir.
-5. Uygulamayı çalıştırın:
-   ```bash
-   flutter run
-   ```
-6. iOS veya Android için üretim versiyonu derlemek isterseniz `flutter build ios` veya `flutter build apk` komutlarını kullanabilirsiniz.
+## Tech Stack
 
-### Vision Backend
+| Technology | Purpose |
+|-----------|---------|
+| Flutter | Cross-platform mobile application development |
+| Dart | Main programming language for the mobile app |
+| Supabase | Authentication, database, and backend services |
+| PowerSync | Offline-first synchronization support |
+| FastAPI | Vision backend API |
+| Hugging Face Transformers | Image analysis and AI model support |
+| FatSecret API | Food recognition and nutrition data integration |
+| Docker | Backend containerization |
 
-Backend, FastAPI ile yazılmış ve görsel analiz için Hugging Face modellerini kullanan bir servistir. Geliştirme ortamında doğrudan Python ile veya Docker üzerinden çalıştırabilirsiniz.
+## Project Structure
 
-**Kurulum (Python):**
+```text
+eatly/
+├── backend/                 # FastAPI vision backend
+│   ├── app/                 # Backend application files
+│   ├── Dockerfile           # Docker configuration
+│   ├── requirements.txt     # Python dependencies
+│   └── README.md            # Backend-specific documentation
+│
+├── eatly/                   # Flutter mobile application
+│   ├── android/             # Android project files
+│   ├── ios/                 # iOS project files
+│   ├── lib/
+│   │   ├── app/             # App setup, routing, dialogs, bottom sheets
+│   │   ├── core/            # Models, services, config, theme, utilities
+│   │   └── ui/              # Views and user interface components
+│   └── pubspec.yaml         # Flutter dependencies
+│
+└── README.md
+```
 
-1. Python 3.11 veya üzeri bir sürüm kurulu olmalıdır.
-2. `backend` klasörüne gidin ve bağımlılıkları yükleyin:
-   ```bash
-   cd backend
-   pip install -r requirements.txt
-   ```
-3. Servisi çalıştırın:
-   ```bash
-   uvicorn app.main:app --host 0.0.0.0 --port 7860
-   ```
-   Ardından `POST /api/vision/analyze` uç noktasına resim bytes göndererek etiket/nesne sonucu alabilirsiniz【437582640382414†L0-L4】.
+## Getting Started
 
-**Kurulum (Docker):**
+### Prerequisites
 
-Uygulamayı Docker ile izole bir şekilde çalıştırmak için backend klasöründe şu komutları çalıştırabilirsiniz:
+Before running the mobile app, make sure you have:
+
+- Flutter SDK installed
+- Android Studio or Xcode configured
+- A Supabase project
+- Required API keys for Supabase, FatSecret, and/or Hugging Face if you want to use the analysis features
+
+### Mobile App Setup
+
+Clone the repository:
+
+```bash
+git clone https://github.com/dursunozer/eatly.git
+cd eatly/eatly
+```
+
+Install Flutter dependencies:
+
+```bash
+flutter pub get
+```
+
+Configure your Supabase and API credentials in the related configuration files.
+
+Run the app:
+
+```bash
+flutter run
+```
+
+Build for Android:
+
+```bash
+flutter build apk
+```
+
+Build for iOS:
+
+```bash
+flutter build ios
+```
+
+## Vision Backend Setup
+
+Go to the backend folder:
+
+```bash
+cd backend
+```
+
+Install Python dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Run the backend locally:
+
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 7860
+```
+
+The main endpoint is:
+
+```http
+POST /api/vision/analyze
+```
+
+Example Docker usage:
+
 ```bash
 docker build -t eatly-vision .
 docker run -p 7860:7860 eatly-vision
 ```
-Bu adımlar, backend’in doğru şekilde yapılandırıldığında otomatik olarak FastAPI sunucusunu başlatır【437582640382414†L6-L10】. Hugging Face Spaces üzerinde dağıtmak için alan türünü “Docker” olarak ayarlayıp GPU’lu bir donanım seçerek aynı giriş noktasını (`uvicorn app.main:app`) kullanabilirsiniz .
 
-## Kullanılan Teknolojiler
+## Future Improvements
 
-| Teknoloji | Açıklama |
-|-----------|---------|
-| **Flutter & Dart** | Çapraz platform mobil uygulama geliştirme çerçevesi; Stacked mimarisi ve servis odaklı yapıyla modüler ve okunabilir kod sağlar. |
-| **Supabase** | Açık kaynaklı backend platformu; kimlik doğrulama, veritabanı, depolama ve gerçek zamanlı özellikler sunar. PowerSync ile çevrimdışı senkronizasyon desteklenir. |
-| **FastAPI** | Vision backend için modern, hızlı bir web çerçevesi; REST API oluşturur ve Docker üzerinde çalıştırılabilir. |
-| **Hugging Face Transformers** | Görüntü sınıflandırma ve nesne algılama gibi yapay zekâ görevleri için model sağlar; API’den gelen sonuçlar besin analizi için kullanılır. |
-| **FatSecret API** | Fotoğraflardan tanınan yiyecekler için besin değerlerini almak amacıyla kullanılır; `AnalysisService` bu API’yi entegre eder . |
-| **Docker** | Backend’in konteynerleştirilmesi ve taşınabilir ortamda çalıştırılması. |
+- More accurate food recognition results
+- Improved nutrition database integration
+- Barcode scanning support
+- More detailed charts and statistics
+- Achievement and badge system
+- Multi-language support improvements
+- Automated tests
+- Improved error handling and API configuration
 
-## Katkıda Bulunma
+## Contributing
 
-Katkılarınızı memnuniyetle karşılıyoruz! Hataları veya iyileştirme önerilerinizi **Issues** bölümünde bildirebilir veya doğrudan **Pull Request** oluşturabilirsiniz. Kod katkıları yaparken aşağıdaki noktalara dikkat edin:
+Contributions are welcome. To contribute:
 
-1. Değişikliklerinizin başka özellikleri bozmamasına dikkat edin; test edilebilir bir mimari tercih edin.
-2. Clear, kısa açıklamalarla commit mesajları yazın.
-3. Kod stiline ve projenin dosya yapısına uyum sağlayın; servis temelli yapı ve Stacked mimarisi içinde yeni servisler ekleyin veya mevcut olanları genişletin.
-4. Gerekli durumlarda yeni bağımlılıkları ve API anahtarlarını dokümantasyonda belirtin.
+```bash
+git checkout -b feature/your-feature-name
+git add .
+git commit -m "feat: add your feature"
+git push origin feature/your-feature-name
+```
 
-## Lisans
+Then open a pull request.
 
-Bu depoda henüz açık bir lisans dosyası bulunmadığından, projenin kullanım koşulları geliştirici tarafından belirlenir. Kişisel kullanım veya eğitim amaçlı denemelerde kullanabilirsiniz; ticari veya yaygın dağıtım durumlarında lütfen depoyu oluşturan geliştirici ile iletişime geçin.
+## License
+
+This repository currently does not include a license file. Please contact the repository owner before using or distributing the project for commercial purposes.
+
+## Developer
+
+**Dursun Özer**  
+GitHub: [@dursunozer](https://github.com/dursunozer)
